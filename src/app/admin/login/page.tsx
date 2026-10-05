@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
           </div>
           <h1 className="text-2xl font-bold font-serif text-[#1f2220]">FRK Admin Portal</h1>
           <p className="text-xs text-[#5b605b]">
-            Protected Login. Enter your authorized admin email & password from <code className="font-mono text-[#9a6f0c]">.env.local</code>.
+            Protected Login. Enter your authorized admin email address and password.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 required
-                placeholder="e.g. admin@frklighting.com"
+                placeholder="Enter admin email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white border border-[#c9c7bd] rounded-md pl-9 pr-3.5 py-2.5 text-[#1f2220] text-sm focus:outline-none focus:border-[#E4B241]"
@@ -112,12 +112,6 @@ export default function AdminLoginPage() {
             {loading ? 'Authenticating...' : 'Secure Admin Login'}
           </button>
         </form>
-
-        <div className="bg-[#f6f4ee] p-3.5 rounded-lg border border-[#e4e2da] text-xs text-[#5b605b] space-y-1">
-          <span className="font-semibold text-[#1f2220] block">Default Admin Credentials (.env.local):</span>
-          <p>Email: <code className="text-[#9a6f0c] font-mono">admin@frklighting.com</code></p>
-          <p>Password: <code className="text-[#9a6f0c] font-mono">admin</code></p>
-        </div>
       </div>
     </div>
   );
