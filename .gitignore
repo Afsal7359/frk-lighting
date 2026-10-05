@@ -16,6 +16,9 @@
 *.tsbuildinfo
 next-env.d.ts
 
+# Duplicate assets (Public assets are stored in /public/images)
+/images/
+
 # Environment Variables & Secret Files
 .env
 .env*
