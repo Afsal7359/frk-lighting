@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --gold: #E4B241;
+    --gd: #9a6f0c;
+    --ink: #1f2220;
+    --mut: #5b605b;
+    --line: #e4e2da;
+    --soft: #f6f4ee;
+    --dk: #242624;
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-serif: "Archivo", system-ui, sans-serif;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Custom Card & Panel Styling matching original clean look */
+.site-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.site-card-soft {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f6f4ee;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9c7bd;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #E4B241;
+}
