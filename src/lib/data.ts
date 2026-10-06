@@ -371,17 +371,27 @@ export async function updateSiteSettings(newSettings: Partial<SiteSettings>): Pr
   return memorySettings;
 }
 
+const isUUID = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+
 export async function getBlogs(): Promise<Blog[]> {
+  let dbBlogs: Blog[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.from('blogs').select('*').order('created_at', { ascending: false });
       if (!error && data && data.length > 0) {
-        return data as Blog[];
+        dbBlogs = data as Blog[];
       }
     } catch (e) {
       console.warn("Supabase blogs fetch failed, using memory store:", e);
     }
   }
+
+  if (dbBlogs.length > 0) {
+    const dbSlugs = new Set(dbBlogs.map((b) => b.slug));
+    const extraMemory = memoryBlogs.filter((b) => !dbSlugs.has(b.slug));
+    return [...dbBlogs, ...extraMemory];
+  }
+
   return memoryBlogs;
 }
 
@@ -390,8 +400,8 @@ export async function saveBlog(blog: Partial<Blog>): Promise<Blog> {
   const now = new Date().toISOString();
   const id = blog.id || `blog-${Date.now()}`;
   const slug = blog.slug || blog.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `post-${Date.now()}`;
-  
-  const updatedBlog: Blog = {
+
+  let updatedBlog: Blog = {
     id,
     slug,
     title: blog.title || "Untitled Post",
@@ -402,28 +412,64 @@ export async function saveBlog(blog: Partial<Blog>): Promise<Blog> {
     image_url: blog.image_url || "/images/frk10.jpg",
     published: blog.published !== undefined ? blog.published : true,
     created_at: blog.created_at || now,
-    updated_at: now
+    updated_at: now,
+    prev_blog_id: blog.prev_blog_id,
+    next_blog_id: blog.next_blog_id,
+    related_blog_ids: blog.related_blog_ids
   };
-
-  if (isEdit) {
-    memoryBlogs = memoryBlogs.map(b => b.id === id ? updatedBlog : b);
-  } else {
-    memoryBlogs = [updatedBlog, ...memoryBlogs];
-  }
 
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('blogs').upsert([updatedBlog]);
+      const dbPayload: Record<string, any> = {
+        slug: updatedBlog.slug,
+        title: updatedBlog.title,
+        excerpt: updatedBlog.excerpt,
+        content: updatedBlog.content,
+        category: 'Guide',
+        read_time: updatedBlog.read_time,
+        author: updatedBlog.author,
+        image_url: updatedBlog.image_url,
+        published: updatedBlog.published,
+        created_at: updatedBlog.created_at,
+        updated_at: updatedBlog.updated_at
+      };
+
+      if (updatedBlog.prev_blog_id) dbPayload.prev_blog_id = updatedBlog.prev_blog_id;
+      if (updatedBlog.next_blog_id) dbPayload.next_blog_id = updatedBlog.next_blog_id;
+      if (updatedBlog.related_blog_ids) dbPayload.related_blog_ids = updatedBlog.related_blog_ids;
+
+      if (isEdit && isUUID(blog.id)) {
+        dbPayload.id = blog.id;
+        const { data, error } = await supabase.from('blogs').upsert([dbPayload]).select();
+        if (error) {
+          console.warn("Supabase saveBlog upsert warning:", error);
+          await supabase.from('blogs').upsert([dbPayload], { onConflict: 'slug' });
+        }
+      } else {
+        const { data, error } = await supabase.from('blogs').insert([dbPayload]).select();
+        if (!error && data && data.length > 0 && data[0].id) {
+          updatedBlog.id = data[0].id;
+        } else if (error) {
+          console.warn("Supabase saveBlog insert warning:", error);
+          await supabase.from('blogs').upsert([dbPayload], { onConflict: 'slug' });
+        }
+      }
     } catch (e) {
-      console.warn("Supabase saveBlog error:", e);
+      console.warn("Supabase saveBlog exception:", e);
     }
+  }
+
+  if (isEdit) {
+    memoryBlogs = memoryBlogs.map((b) => (b.id === updatedBlog.id || b.slug === updatedBlog.slug ? updatedBlog : b));
+  } else {
+    memoryBlogs = [updatedBlog, ...memoryBlogs.filter((b) => b.slug !== updatedBlog.slug)];
   }
 
   return updatedBlog;
 }
 
 export async function deleteBlog(id: string): Promise<boolean> {
-  memoryBlogs = memoryBlogs.filter(b => b.id !== id);
+  memoryBlogs = memoryBlogs.filter((b) => b.id !== id);
   if (isSupabaseConfigured && supabase) {
     try {
       await supabase.from('blogs').delete().eq('id', id);
@@ -435,16 +481,24 @@ export async function deleteBlog(id: string): Promise<boolean> {
 }
 
 export async function getProducts(): Promise<Product[]> {
+  let dbProducts: Product[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.from('products').select('*').order('sort_order', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data as Product[];
+        dbProducts = data as Product[];
       }
     } catch (e) {
       console.warn("Supabase products fetch failed:", e);
     }
   }
+
+  if (dbProducts.length > 0) {
+    const dbSlugs = new Set(dbProducts.map((p) => p.slug));
+    const extraMemory = memoryProducts.filter((p) => !dbSlugs.has(p.slug));
+    return [...dbProducts, ...extraMemory];
+  }
+
   return memoryProducts;
 }
 
@@ -452,8 +506,8 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
   const isEdit = Boolean(product.id);
   const id = product.id || `prod-${Date.now()}`;
   const slug = product.slug || product.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `prod-${Date.now()}`;
-  
-  const updatedProd: Product = {
+
+  let updatedProd: Product = {
     id,
     slug,
     name: product.name || "New Solar Product",
@@ -469,25 +523,32 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
     sort_order: product.sort_order || memoryProducts.length + 1
   };
 
-  if (isEdit) {
-    memoryProducts = memoryProducts.map(p => p.id === id ? updatedProd : p);
-  } else {
-    memoryProducts = [...memoryProducts, updatedProd];
-  }
-
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('products').upsert([updatedProd]);
+      const dbPayload: Record<string, any> = { ...updatedProd };
+      if (!isUUID(product.id)) {
+        delete dbPayload.id;
+      }
+      const { data, error } = await supabase.from('products').upsert([dbPayload], { onConflict: 'slug' }).select();
+      if (!error && data && data.length > 0 && data[0].id) {
+        updatedProd.id = data[0].id;
+      }
     } catch (e) {
       console.warn("Supabase saveProduct error:", e);
     }
+  }
+
+  if (isEdit) {
+    memoryProducts = memoryProducts.map((p) => (p.id === updatedProd.id || p.slug === updatedProd.slug ? updatedProd : p));
+  } else {
+    memoryProducts = [updatedProd, ...memoryProducts.filter((p) => p.slug !== updatedProd.slug)];
   }
 
   return updatedProd;
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  memoryProducts = memoryProducts.filter(p => p.id !== id);
+  memoryProducts = memoryProducts.filter((p) => p.id !== id);
   if (isSupabaseConfigured && supabase) {
     try {
       await supabase.from('products').delete().eq('id', id);
@@ -499,42 +560,60 @@ export async function deleteProduct(id: string): Promise<boolean> {
 }
 
 export async function getApplications(): Promise<ApplicationItem[]> {
+  let dbApps: ApplicationItem[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.from('applications').select('*').order('sort_order', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data as ApplicationItem[];
+        dbApps = data as ApplicationItem[];
       }
     } catch (e) {
       console.warn("Supabase applications fetch failed:", e);
     }
   }
+
+  if (dbApps.length > 0) {
+    const dbSlugs = new Set(dbApps.map((a) => a.slug));
+    const extraMemory = memoryApplications.filter((a) => !dbSlugs.has(a.slug));
+    return [...dbApps, ...extraMemory];
+  }
+
   return memoryApplications;
 }
 
 export async function saveApplication(appItem: Partial<ApplicationItem>): Promise<ApplicationItem> {
-  let updatedApp: ApplicationItem;
-  if (appItem.id) {
-    memoryApplications = memoryApplications.map((a) => (a.id === appItem.id ? ({ ...a, ...appItem } as ApplicationItem) : a));
-    updatedApp = memoryApplications.find((a) => a.id === appItem.id)!;
-  } else {
-    updatedApp = {
-      id: `app-${Date.now()}`,
-      slug: appItem.slug || `app-${Date.now()}`,
-      title: appItem.title || 'New Application',
-      description: appItem.description || '',
-      image_url: appItem.image_url || '',
-      sort_order: appItem.sort_order || memoryApplications.length + 1,
-    };
-    memoryApplications.push(updatedApp);
-  }
+  const isEdit = Boolean(appItem.id);
+  const id = appItem.id || `app-${Date.now()}`;
+  const slug = appItem.slug || appItem.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `app-${Date.now()}`;
+
+  let updatedApp: ApplicationItem = {
+    id,
+    slug,
+    title: appItem.title || 'New Application',
+    description: appItem.description || '',
+    image_url: appItem.image_url || '',
+    sort_order: appItem.sort_order || memoryApplications.length + 1,
+  };
 
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('applications').upsert([updatedApp]);
+      const dbPayload: Record<string, any> = { ...updatedApp };
+      if (!isUUID(appItem.id)) {
+        delete dbPayload.id;
+      }
+      const { data, error } = await supabase.from('applications').upsert([dbPayload], { onConflict: 'slug' }).select();
+      if (!error && data && data.length > 0 && data[0].id) {
+        updatedApp.id = data[0].id;
+      }
     } catch (e) {
       console.warn("Supabase saveApplication error:", e);
     }
+  }
+
+  if (isEdit) {
+    memoryApplications = memoryApplications.map((a) => (a.id === updatedApp.id || a.slug === updatedApp.slug ? updatedApp : a));
+  } else {
+    memoryApplications = [updatedApp, ...memoryApplications.filter((a) => a.slug !== updatedApp.slug)];
   }
 
   return updatedApp;
