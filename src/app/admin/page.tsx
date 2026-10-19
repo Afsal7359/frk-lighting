@@ -21,7 +21,12 @@ import {
   ShieldCheck,
   Image as ImageIcon,
   Star,
-  MessageSquare
+  MessageSquare,
+  Copy,
+  Check,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import {
   Blog,
@@ -55,8 +60,87 @@ import {
   updateInquiryStatus,
   getKeepAliveStatus,
   recordKeepAlivePing,
+  checkDatabaseSchema,
+  DatabaseTableStatus,
   INITIAL_SITE_SETTINGS
 } from '@/lib/data';
+
+const MIGRATION_SQL = `-- FRK Lighting Solutions - Supabase Table Creation Migration
+-- Run this in your Supabase SQL Editor:
+-- https://supabase.com/dashboard/project/mrnzpihjceyzhorvwdjv/sql
+
+-- 1. Create Installation Stories Table
+CREATE TABLE IF NOT EXISTS installation_stories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    location TEXT NOT NULL,
+    category TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    description TEXT,
+    date TEXT,
+    rating INT DEFAULT 5,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Create Customer Testimonials Table
+CREATE TABLE IF NOT EXISTS testimonials (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    role TEXT,
+    location TEXT NOT NULL,
+    comment TEXT NOT NULL,
+    rating INT DEFAULT 5,
+    avatar_url TEXT,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Add any missing columns to existing tables
+ALTER TABLE products ADD COLUMN IF NOT EXISTS fixture_image_url TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS lifestyle_image_url TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS specs JSONB;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS prev_blog_id TEXT;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS next_blog_id TEXT;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS related_blog_ids TEXT[];
+ALTER TABLE installation_stories ADD COLUMN IF NOT EXISTS date TEXT;
+ALTER TABLE installation_stories ADD COLUMN IF NOT EXISTS rating INT DEFAULT 5;
+ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS role TEXT;
+
+-- 4. Enable Row Level Security (RLS)
+ALTER TABLE installation_stories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+
+-- 5. Create Security Policies (clean recreation)
+DROP POLICY IF EXISTS "Public read installation_stories" ON installation_stories;
+DROP POLICY IF EXISTS "Public write installation_stories" ON installation_stories;
+CREATE POLICY "Public read installation_stories" ON installation_stories FOR SELECT USING (true);
+CREATE POLICY "Public write installation_stories" ON installation_stories FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Public read testimonials" ON testimonials;
+DROP POLICY IF EXISTS "Public write testimonials" ON testimonials;
+CREATE POLICY "Public read testimonials" ON testimonials FOR SELECT USING (true);
+CREATE POLICY "Public write testimonials" ON testimonials FOR ALL USING (true);
+
+-- 6. Insert Default Seed Data (Safe: ON CONFLICT DO NOTHING)
+INSERT INTO installation_stories (slug, title, location, category, image_url, description, sort_order)
+VALUES
+('residential-street-lighting', 'Residential Street Lighting', 'Kozhikode, Kerala', 'Solar Street Lights', '/images/frk14.jpg', 'Complete dusk-to-dawn split-type solar street lighting project covering private colony access roads with high lumen efficiency.', 1),
+('home-compound-lighting', 'Home Compound Lighting', 'Malappuram, Kerala', 'Residential', '/images/frk15.jpg', 'Villa perimeter solar street lights installed on 5m powder-coated poles ensuring security and zero electricity costs.', 2),
+('industrial-area-lighting', 'Industrial Area Lighting', 'Thrissur, Kerala', 'Commercial', '/images/frk16.jpg', 'High-power solar flood lighting across factory dispatch bays, raw material yards, and perimeter security walls.', 3),
+('resort-pathway-lighting', 'Resort Pathway Lighting', 'Wayanad, Kerala', 'Solar Street Lights', '/images/frk13.jpg', 'Warm solar path fixtures installed across hillside eco-resort walkways without disrupting landscape soil or roots.', 4),
+('village-road-project', 'Village Road Project', 'Kannur, Kerala', 'Solar Street Lights', '/images/frk17.jpg', 'Panchayat road lighting initiative delivering uninterrupted 2-day monsoon backup for rural junctions and curves.', 5),
+('commercial-property', 'Commercial Property', 'Kottayam, Kerala', 'Solar Flood Lights', '/images/frk10.jpg', 'Commercial plaza parking and facade lighting powered entirely by rooftop solar arrays and LiFePO4 battery banks.', 6)
+ON CONFLICT (slug) DO NOTHING;
+
+INSERT INTO testimonials (name, role, location, comment, rating, avatar_url, sort_order)
+VALUES
+('Shafeeq', 'Villa Owner', 'Kozhikode, Kerala', 'Very good product and professional installation. The brightness is excellent and working perfectly.', 5, '/images/avatars/user1.svg', 1),
+('Ramesh', 'Business Owner', 'Malappuram, Kerala', 'FRK team guided us well from selection to installation. Highly recommended.', 5, '/images/avatars/user2.svg', 2),
+('Aji Kumar', 'Estate Owner', 'Kannur, Kerala', 'Very satisfied with the service. Installation was neat and on time.', 5, '/images/avatars/user3.svg', 3),
+('Fathima', 'Homeowner', 'Kottayam, Kerala', 'Good quality light and excellent customer support even after installation.', 5, '/images/avatars/user4.svg', 4)
+ON CONFLICT DO NOTHING;`;
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -80,6 +164,16 @@ export default function AdminDashboardPage() {
     logs: KeepAliveLog[];
   }>({ lastPing: '', status: 'active', hoursSinceLastPing: 0, logs: [] });
 
+  const [schemaStatus, setSchemaStatus] = useState<{
+    checked: boolean;
+    isConfigured: boolean;
+    allTablesOk: boolean;
+    missingTables: string[];
+    tables: DatabaseTableStatus[];
+  }>({ checked: false, isConfigured: true, allTablesOk: true, missingTables: [], tables: [] });
+
+  const [showMigrationSql, setShowMigrationSql] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -107,7 +201,7 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [st, bl, pr, ap, inq, ka, str, testm] = await Promise.all([
+      const [st, bl, pr, ap, inq, ka, str, testm, schema] = await Promise.all([
         getSiteSettings(),
         getBlogs(),
         getProducts(),
@@ -115,7 +209,8 @@ export default function AdminDashboardPage() {
         getInquiries(),
         getKeepAliveStatus(),
         getInstallationStories(),
-        getTestimonials()
+        getTestimonials(),
+        checkDatabaseSchema()
       ]);
       setSettings(st);
       setEditingSettings(st);
@@ -126,6 +221,7 @@ export default function AdminDashboardPage() {
       setKeepAliveData(ka);
       setStories(str);
       setTestimonials(testm);
+      setSchemaStatus({ ...schema, checked: true });
     } catch (e) {
       console.error(e);
     } finally {
@@ -135,7 +231,16 @@ export default function AdminDashboardPage() {
 
   const showMsg = (text: string, type: 'success' | 'error' = 'success') => {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 4000);
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  const handleCopyMigrationSql = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(MIGRATION_SQL);
+      setCopiedSql(true);
+      showMsg('Supabase Migration SQL copied to clipboard! Paste in Supabase SQL Editor and click Run.', 'success');
+      setTimeout(() => setCopiedSql(false), 3000);
+    }
   };
 
   // Helper for uploading image file directly to ImageKit CDN
@@ -193,9 +298,9 @@ export default function AdminDashboardPage() {
     try {
       await updateSiteSettings(editingSettings);
       setSettings(editingSettings);
-      showMsg('Website content and settings saved successfully!');
-    } catch (e) {
-      showMsg('Failed to update website settings', 'error');
+      showMsg('Website content and settings saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save settings: ${err?.message || err}`, 'error');
     }
   };
 
@@ -206,17 +311,21 @@ export default function AdminDashboardPage() {
       await saveBlog(editingBlog);
       setEditingBlog(null);
       await loadData();
-      showMsg('Blog article saved successfully!');
-    } catch (e) {
-      showMsg('Failed to save blog article', 'error');
+      showMsg('Blog article saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save blog article: ${err?.message || err}`, 'error');
     }
   };
 
   const handleDeleteBlogClick = async (id: string) => {
     if (confirm('Delete this blog post?')) {
-      await deleteBlog(id);
-      await loadData();
-      showMsg('Blog article deleted.');
+      try {
+        await deleteBlog(id);
+        await loadData();
+        showMsg('Blog article deleted.');
+      } catch (err: any) {
+        showMsg(`Failed to delete blog article: ${err?.message || err}`, 'error');
+      }
     }
   };
 
@@ -227,17 +336,21 @@ export default function AdminDashboardPage() {
       await saveProduct(editingProduct);
       setEditingProduct(null);
       await loadData();
-      showMsg('Product saved successfully!');
-    } catch (e) {
-      showMsg('Failed to save product', 'error');
+      showMsg('Product saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save product: ${err?.message || err}`, 'error');
     }
   };
 
   const handleDeleteProductClick = async (id: string) => {
     if (confirm('Delete this product?')) {
-      await deleteProduct(id);
-      await loadData();
-      showMsg('Product removed.');
+      try {
+        await deleteProduct(id);
+        await loadData();
+        showMsg('Product removed.');
+      } catch (err: any) {
+        showMsg(`Failed to delete product: ${err?.message || err}`, 'error');
+      }
     }
   };
 
@@ -248,17 +361,21 @@ export default function AdminDashboardPage() {
       await saveApplication(editingApplication);
       setEditingApplication(null);
       await loadData();
-      showMsg('Application area saved successfully!');
-    } catch (e) {
-      showMsg('Failed to save application area', 'error');
+      showMsg('Application area saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save application area: ${err?.message || err}`, 'error');
     }
   };
 
   const handleDeleteApplicationClick = async (id: string) => {
     if (confirm('Delete this application area?')) {
-      await deleteApplication(id);
-      await loadData();
-      showMsg('Application area removed.');
+      try {
+        await deleteApplication(id);
+        await loadData();
+        showMsg('Application area removed.');
+      } catch (err: any) {
+        showMsg(`Failed to delete application area: ${err?.message || err}`, 'error');
+      }
     }
   };
 
@@ -269,17 +386,21 @@ export default function AdminDashboardPage() {
       await saveInstallationStory(editingStory);
       setEditingStory(null);
       await loadData();
-      showMsg('Customer installation story saved successfully!');
-    } catch (e) {
-      showMsg('Failed to save story', 'error');
+      showMsg('Customer installation story saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save story in database: ${err?.message || err}`, 'error');
     }
   };
 
   const handleDeleteStoryClick = async (id: string) => {
     if (confirm('Delete this customer story?')) {
-      await deleteInstallationStory(id);
-      await loadData();
-      showMsg('Story removed.');
+      try {
+        await deleteInstallationStory(id);
+        await loadData();
+        showMsg('Story removed.');
+      } catch (err: any) {
+        showMsg(`Failed to delete story: ${err?.message || err}`, 'error');
+      }
     }
   };
 
@@ -290,24 +411,32 @@ export default function AdminDashboardPage() {
       await saveTestimonial(editingTestimonial);
       setEditingTestimonial(null);
       await loadData();
-      showMsg('Customer testimonial saved successfully!');
-    } catch (e) {
-      showMsg('Failed to save testimonial', 'error');
+      showMsg('Customer testimonial saved successfully to Supabase!');
+    } catch (err: any) {
+      showMsg(`Failed to save testimonial in database: ${err?.message || err}`, 'error');
     }
   };
 
   const handleDeleteTestimonialClick = async (id: string) => {
     if (confirm('Delete this testimonial?')) {
-      await deleteTestimonial(id);
-      await loadData();
-      showMsg('Testimonial removed.');
+      try {
+        await deleteTestimonial(id);
+        await loadData();
+        showMsg('Testimonial removed.');
+      } catch (err: any) {
+        showMsg(`Failed to delete testimonial: ${err?.message || err}`, 'error');
+      }
     }
   };
 
   const handleInquiryStatusChange = async (id: string, status: 'new' | 'contacted' | 'closed') => {
-    await updateInquiryStatus(id, status);
-    await loadData();
-    showMsg(`Inquiry status updated to ${status}`);
+    try {
+      await updateInquiryStatus(id, status);
+      await loadData();
+      showMsg(`Inquiry status updated to ${status}`);
+    } catch (err: any) {
+      showMsg(`Failed to update inquiry status: ${err?.message || err}`, 'error');
+    }
   };
 
   const handleManualKeepAlivePing = async () => {
@@ -373,6 +502,93 @@ export default function AdminDashboardPage() {
         >
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           <span>{message.text}</span>
+        </div>
+      )}
+
+      {/* Missing Database Schema Alert Banner */}
+      {schemaStatus.checked && !schemaStatus.allTablesOk && schemaStatus.missingTables.length > 0 && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-5 space-y-4 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-bold text-[#1f2220] font-serif">
+                    Supabase Database Setup Required
+                  </h2>
+                  <span className="bg-red-100 text-red-700 text-[11px] font-sans font-bold px-2.5 py-0.5 rounded-full border border-red-200">
+                    {schemaStatus.missingTables.length} Tables Missing (HTTP 404)
+                  </span>
+                </div>
+                <p className="text-xs text-[#5b605b] leading-relaxed">
+                  The following tables are not created in your Supabase project yet:
+                  {schemaStatus.missingTables.map((t) => (
+                    <span key={t} className="inline-block mx-1 px-1.5 py-0.5 bg-red-100 text-red-900 rounded font-mono font-bold text-[11px] border border-red-200">
+                      {t}
+                    </span>
+                  ))}
+                  . Until these tables are created, details saved in Stories and Testimonials cannot be saved to the database.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyMigrationSql}
+                className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+              >
+                {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-900" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedSql ? 'SQL Copied!' : 'Copy Fix SQL'}</span>
+              </button>
+
+              <a
+                href="https://supabase.com/dashboard/project/mrnzpihjceyzhorvwdjv/sql"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white hover:bg-neutral-50 text-[#1f2220] border border-[#c9c7bd] font-semibold px-3 py-2 rounded-md text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <span>Open Supabase SQL Editor</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowMigrationSql(!showMigrationSql)}
+                className="bg-[#f6f4ee] hover:bg-[#e4e2da] text-[#1f2220] border border-[#c9c7bd] px-3 py-2 rounded-md text-xs font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <span>{showMigrationSql ? 'Hide SQL' : 'View SQL'}</span>
+                {showMigrationSql ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={loadData}
+                className="bg-[#25a244] hover:bg-[#208f3b] text-white font-bold px-3 py-2 rounded-md text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Re-check DB</span>
+              </button>
+            </div>
+          </div>
+
+          {showMigrationSql && (
+            <div className="relative mt-2 bg-[#191c19] text-[#e4e2da] rounded-lg p-4 text-xs font-mono overflow-x-auto max-h-64 border border-neutral-700">
+              <div className="flex justify-between items-center mb-2 pb-2 border-b border-neutral-700">
+                <span className="text-[11px] text-[#E4B241] font-sans font-semibold">
+                  Copy and paste this into Supabase SQL Editor, then click RUN:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyMigrationSql}
+                  className="bg-[#E4B241] text-[#1f2220] text-[11px] font-bold px-2.5 py-1 rounded cursor-pointer"
+                >
+                  {copiedSql ? 'Copied!' : 'Copy SQL'}
+                </button>
+              </div>
+              <pre>{MIGRATION_SQL}</pre>
+            </div>
+          )}
         </div>
       )}
 
@@ -445,9 +661,51 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
-              <span className="text-xs text-[#5b605b]">DB Status</span>
-              <span className="block text-sm font-bold text-emerald-600 font-mono">Active</span>
+              <span className="text-xs text-[#5b605b]">DB Sync</span>
+              <span className={`block text-sm font-bold font-mono ${schemaStatus.allTablesOk ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {schemaStatus.allTablesOk ? 'Healthy' : `${schemaStatus.missingTables.length} Missing`}
+              </span>
               <span className="text-[10px] text-[#5b605b] block">Last ping: {keepAliveData.hoursSinceLastPing}h</span>
+            </div>
+          </div>
+
+          {/* Database Tables Summary Widget in Overview */}
+          <div className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold font-serif text-[#1f2220]">Supabase Tables Sync Status</h2>
+                <p className="text-xs text-[#5b605b]">Live status of all required database tables in Supabase.</p>
+              </div>
+              <button
+                type="button"
+                onClick={loadData}
+                className="text-xs font-semibold text-[#9a6f0c] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Refresh Status</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {schemaStatus.tables.map((tbl) => (
+                <div
+                  key={tbl.name}
+                  className={`p-3 rounded-lg border text-xs flex items-center justify-between ${
+                    tbl.exists
+                      ? 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
+                      : 'bg-red-50 border-red-300 text-red-900'
+                  }`}
+                >
+                  <span className="font-mono font-semibold truncate text-[11px]">{tbl.name}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                      tbl.exists ? 'bg-emerald-200/70 text-emerald-800' : 'bg-red-200 text-red-800'
+                    }`}
+                  >
+                    {tbl.exists ? 'OK' : '404'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -1122,6 +1380,19 @@ export default function AdminDashboardPage() {
                     className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Customer Rating</label>
+                  <select
+                    value={editingStory.rating || 5}
+                    onChange={(e) => setEditingStory({ ...editingStory, rating: Number(e.target.value) })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  >
+                    <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                    <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                    <option value="3">⭐⭐⭐ (3 Stars)</option>
+                  </select>
+                </div>
               </div>
 
               {/* Story Photo Upload */}
@@ -1471,6 +1742,72 @@ export default function AdminDashboardPage() {
               <p className="text-[#5b605b]">
                 Authenticated Admin: <code className="font-mono text-[#9a6f0c]">{adminEmail}</code>
               </p>
+            </div>
+
+            {/* Complete Tables Health Audit */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-[#1f2220] font-serif">Database Tables Schema Audit</h3>
+                  <p className="text-xs text-[#5b605b]">Status of all 8 database tables in your Supabase project.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyMigrationSql}
+                    className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-3 py-1.5 rounded text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedSql ? 'Copied' : 'Copy Migration SQL'}</span>
+                  </button>
+                  <a
+                    href="https://supabase.com/dashboard/project/mrnzpihjceyzhorvwdjv/sql"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white border border-[#c9c7bd] hover:bg-neutral-50 text-[#1f2220] font-semibold px-3 py-1.5 rounded text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Supabase SQL</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="border border-[#e4e2da] rounded-lg overflow-hidden bg-white">
+                <table className="w-full text-left text-xs text-[#1f2220]">
+                  <thead className="bg-[#f6f4ee] font-serif font-bold border-b border-[#e4e2da]">
+                    <tr>
+                      <th className="p-3">Table Name</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Details / Note</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e4e2da]">
+                    {schemaStatus.tables.map((tbl) => (
+                      <tr key={tbl.name} className={!tbl.exists ? 'bg-red-50/50' : ''}>
+                        <td className="p-3 font-mono font-bold text-xs">{tbl.name}</td>
+                        <td className="p-3">
+                          {tbl.exists ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded text-[11px]">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Ready (200 OK)</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-red-700 bg-red-100 font-bold px-2 py-0.5 rounded text-[11px]">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              <span>Missing (404 Not Found)</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-[#5b605b]">
+                          {tbl.exists
+                            ? 'Synced with Supabase database schema.'
+                            : 'Table missing in database. Run migration script to create.'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

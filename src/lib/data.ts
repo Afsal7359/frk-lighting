@@ -731,15 +731,15 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 export async function updateSiteSettings(newSettings: Partial<SiteSettings>): Promise<SiteSettings> {
   memorySettings = { ...memorySettings, ...newSettings };
   if (isSupabaseConfigured && supabase) {
-    try {
-      const updates = Object.entries(newSettings).map(([key, value]) => ({
-        key,
-        value,
-        updated_at: new Date().toISOString()
-      }));
-      await supabase.from('site_settings').upsert(updates, { onConflict: 'key' });
-    } catch (e) {
-      console.warn("Supabase site_settings update error:", e);
+    const updates = Object.entries(newSettings).map(([key, value]) => ({
+      key,
+      value,
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await supabase.from('site_settings').upsert(updates, { onConflict: 'key' });
+    if (error) {
+      console.error("Supabase site_settings update error:", error);
+      throw new Error(error.message || "Failed to update site settings in Supabase");
     }
   }
   return memorySettings;
@@ -947,7 +947,11 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
         const { error } = await supabase.from('products').upsert([fullPayload], { onConflict: 'slug' }).select();
         if (error) {
           console.warn("Supabase saveProduct full payload fallback:", error.message);
-          await supabase.from('products').upsert([corePayload], { onConflict: 'slug' });
+          const { error: coreErr } = await supabase.from('products').upsert([corePayload], { onConflict: 'slug' });
+          if (coreErr) {
+            console.error("Supabase saveProduct error:", coreErr);
+            throw new Error(coreErr.message || 'Failed to save product in Supabase');
+          }
         }
       } else {
         const { data, error } = await supabase.from('products').insert([fullPayload]).select();
@@ -955,14 +959,19 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
           updatedProd.id = data[0].id;
         } else if (error) {
           console.warn("Supabase saveProduct full payload insert fallback:", error.message);
-          const { data: cData } = await supabase.from('products').upsert([corePayload], { onConflict: 'slug' }).select();
+          const { data: cData, error: cErr } = await supabase.from('products').upsert([corePayload], { onConflict: 'slug' }).select();
+          if (cErr) {
+            console.error("Supabase saveProduct error:", cErr);
+            throw new Error(cErr.message || 'Failed to save product in Supabase');
+          }
           if (cData && cData.length > 0 && cData[0].id) {
             updatedProd.id = cData[0].id;
           }
         }
       }
-    } catch (e) {
-      console.warn("Supabase saveProduct error:", e);
+    } catch (e: any) {
+      console.error("Supabase saveProduct error:", e);
+      throw e;
     }
   }
 
@@ -978,10 +987,10 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
 export async function deleteProduct(id: string): Promise<boolean> {
   memoryProducts = memoryProducts.filter((p) => p.id !== id);
   if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from('products').delete().eq('id', id);
-    } catch (e) {
-      console.warn("Supabase deleteProduct error:", e);
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) {
+      console.error("Supabase deleteProduct error:", error);
+      throw new Error(error.message || 'Failed to delete product from Supabase');
     }
   }
   return true;
@@ -1024,17 +1033,17 @@ export async function saveApplication(appItem: Partial<ApplicationItem>): Promis
   };
 
   if (isSupabaseConfigured && supabase) {
-    try {
-      const dbPayload: Record<string, any> = { ...updatedApp };
-      if (!isUUID(appItem.id)) {
-        delete dbPayload.id;
-      }
-      const { data, error } = await supabase.from('applications').upsert([dbPayload], { onConflict: 'slug' }).select();
-      if (!error && data && data.length > 0 && data[0].id) {
-        updatedApp.id = data[0].id;
-      }
-    } catch (e) {
-      console.warn("Supabase saveApplication error:", e);
+    const dbPayload: Record<string, any> = { ...updatedApp };
+    if (!isUUID(appItem.id)) {
+      delete dbPayload.id;
+    }
+    const { data, error } = await supabase.from('applications').upsert([dbPayload], { onConflict: 'slug' }).select();
+    if (error) {
+      console.error("Supabase saveApplication error:", error);
+      throw new Error(error.message || 'Failed to save application area in Supabase');
+    }
+    if (data && data.length > 0 && data[0].id) {
+      updatedApp.id = data[0].id;
     }
   }
 
@@ -1050,10 +1059,10 @@ export async function saveApplication(appItem: Partial<ApplicationItem>): Promis
 export async function deleteApplication(id: string): Promise<boolean> {
   memoryApplications = memoryApplications.filter((a) => a.id !== id);
   if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from('applications').delete().eq('id', id);
-    } catch (e) {
-      console.warn("Supabase deleteApplication error:", e);
+    const { error } = await supabase.from('applications').delete().eq('id', id);
+    if (error) {
+      console.error("Supabase deleteApplication error:", error);
+      throw new Error(error.message || 'Failed to delete application area from Supabase');
     }
   }
   return true;
@@ -1180,22 +1189,15 @@ export async function getKeepAliveStatus(): Promise<{
 
 // --- INSTALLATION STORIES ---
 export async function getInstallationStories(): Promise<InstallationStory[]> {
-  let dbStories: InstallationStory[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.from('installation_stories').select('*').order('sort_order', { ascending: true });
       if (!error && data && data.length > 0) {
-        dbStories = data as InstallationStory[];
+        return data as InstallationStory[];
       }
     } catch (e) {
-      console.warn("Supabase installation_stories fetch failed:", e);
+      console.warn("Supabase installation_stories fetch failed, using fallback:", e);
     }
-  }
-
-  if (dbStories.length > 0) {
-    const dbSlugs = new Set(dbStories.map((s) => s.slug));
-    const extraMemory = memoryInstallationStories.filter((s) => !dbSlugs.has(s.slug));
-    return [...dbStories, ...extraMemory];
   }
 
   return memoryInstallationStories;
@@ -1214,22 +1216,24 @@ export async function saveInstallationStory(story: Partial<InstallationStory>): 
     category: story.category || "Solar Street Lights",
     image_url: story.image_url || "/images/frk14.jpg",
     description: story.description || "",
+    date: story.date || "",
+    rating: story.rating || 5,
     sort_order: story.sort_order || memoryInstallationStories.length + 1,
     created_at: story.created_at || new Date().toISOString()
   };
 
   if (isSupabaseConfigured && supabase) {
-    try {
-      const dbPayload: Record<string, any> = { ...updatedStory };
-      if (!isUUID(story.id)) {
-        delete dbPayload.id;
-      }
-      const { data, error } = await supabase.from('installation_stories').upsert([dbPayload], { onConflict: 'slug' }).select();
-      if (!error && data && data.length > 0 && data[0].id) {
-        updatedStory.id = data[0].id;
-      }
-    } catch (e) {
-      console.warn("Supabase saveInstallationStory warning:", e);
+    const dbPayload: Record<string, any> = { ...updatedStory };
+    if (!isUUID(story.id)) {
+      delete dbPayload.id;
+    }
+    const { data, error } = await supabase.from('installation_stories').upsert([dbPayload], { onConflict: 'slug' }).select();
+    if (error) {
+      console.error("Supabase saveInstallationStory error:", error);
+      throw new Error(error.message || "Failed to save installation story in Supabase database");
+    }
+    if (data && data.length > 0 && data[0].id) {
+      updatedStory.id = data[0].id;
     }
   }
 
@@ -1245,10 +1249,10 @@ export async function saveInstallationStory(story: Partial<InstallationStory>): 
 export async function deleteInstallationStory(id: string): Promise<boolean> {
   memoryInstallationStories = memoryInstallationStories.filter((s) => s.id !== id);
   if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from('installation_stories').delete().eq('id', id);
-    } catch (e) {
-      console.warn("Supabase deleteInstallationStory error:", e);
+    const { error } = await supabase.from('installation_stories').delete().eq('id', id);
+    if (error) {
+      console.error("Supabase deleteInstallationStory error:", error);
+      throw new Error(error.message || "Failed to delete installation story from Supabase database");
     }
   }
   return true;
@@ -1256,22 +1260,15 @@ export async function deleteInstallationStory(id: string): Promise<boolean> {
 
 // --- TESTIMONIALS ---
 export async function getTestimonials(): Promise<CustomerTestimonial[]> {
-  let dbTestimonials: CustomerTestimonial[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase.from('testimonials').select('*').order('sort_order', { ascending: true });
       if (!error && data && data.length > 0) {
-        dbTestimonials = data as CustomerTestimonial[];
+        return data as CustomerTestimonial[];
       }
     } catch (e) {
-      console.warn("Supabase testimonials fetch failed:", e);
+      console.warn("Supabase testimonials fetch failed, using fallback:", e);
     }
-  }
-
-  if (dbTestimonials.length > 0) {
-    const dbIds = new Set(dbTestimonials.map((t) => t.id));
-    const extraMemory = memoryTestimonials.filter((t) => !dbIds.has(t.id));
-    return [...dbTestimonials, ...extraMemory];
   }
 
   return memoryTestimonials;
@@ -1284,6 +1281,7 @@ export async function saveTestimonial(testimonial: Partial<CustomerTestimonial>)
   const updatedTestimonial: CustomerTestimonial = {
     id,
     name: testimonial.name || "Customer",
+    role: testimonial.role || "",
     location: testimonial.location || "Kerala, India",
     comment: testimonial.comment || "Great service and lighting performance.",
     rating: testimonial.rating || 5,
@@ -1293,17 +1291,17 @@ export async function saveTestimonial(testimonial: Partial<CustomerTestimonial>)
   };
 
   if (isSupabaseConfigured && supabase) {
-    try {
-      const dbPayload: Record<string, any> = { ...updatedTestimonial };
-      if (!isUUID(testimonial.id)) {
-        delete dbPayload.id;
-      }
-      const { data, error } = await supabase.from('testimonials').upsert([dbPayload]).select();
-      if (!error && data && data.length > 0 && data[0].id) {
-        updatedTestimonial.id = data[0].id;
-      }
-    } catch (e) {
-      console.warn("Supabase saveTestimonial warning:", e);
+    const dbPayload: Record<string, any> = { ...updatedTestimonial };
+    if (!isUUID(testimonial.id)) {
+      delete dbPayload.id;
+    }
+    const { data, error } = await supabase.from('testimonials').upsert([dbPayload]).select();
+    if (error) {
+      console.error("Supabase saveTestimonial error:", error);
+      throw new Error(error.message || "Failed to save customer testimonial in Supabase database");
+    }
+    if (data && data.length > 0 && data[0].id) {
+      updatedTestimonial.id = data[0].id;
     }
   }
 
@@ -1319,11 +1317,78 @@ export async function saveTestimonial(testimonial: Partial<CustomerTestimonial>)
 export async function deleteTestimonial(id: string): Promise<boolean> {
   memoryTestimonials = memoryTestimonials.filter((t) => t.id !== id);
   if (isSupabaseConfigured && supabase) {
-    try {
-      await supabase.from('testimonials').delete().eq('id', id);
-    } catch (e) {
-      console.warn("Supabase deleteTestimonial error:", e);
+    const { error } = await supabase.from('testimonials').delete().eq('id', id);
+    if (error) {
+      console.error("Supabase deleteTestimonial error:", error);
+      throw new Error(error.message || "Failed to delete testimonial from Supabase database");
     }
   }
   return true;
 }
+
+// --- DATABASE SCHEMA & HEALTH DIAGNOSTICS ---
+export interface DatabaseTableStatus {
+  name: string;
+  exists: boolean;
+  status: 'ok' | 'missing' | 'error';
+  message?: string;
+}
+
+export async function checkDatabaseSchema(): Promise<{
+  isConfigured: boolean;
+  allTablesOk: boolean;
+  tables: DatabaseTableStatus[];
+  missingTables: string[];
+}> {
+  if (!isSupabaseConfigured || !supabase) {
+    return {
+      isConfigured: false,
+      allTablesOk: false,
+      tables: [],
+      missingTables: []
+    };
+  }
+
+  const tableNames = [
+    'site_settings',
+    'blogs',
+    'products',
+    'applications',
+    'inquiries',
+    'db_keepalive_log',
+    'installation_stories',
+    'testimonials'
+  ];
+
+  const results: DatabaseTableStatus[] = await Promise.all(
+    tableNames.map(async (table) => {
+      try {
+        const { error } = await supabase!.from(table).select('*').limit(1);
+        if (error) {
+          if (
+            error.code === 'PGRST205' ||
+            error.message?.includes('schema cache') ||
+            error.message?.includes('not find') ||
+            (error as any).status === 404
+          ) {
+            return { name: table, exists: false, status: 'missing', message: error.message };
+          }
+          return { name: table, exists: false, status: 'error', message: error.message };
+        }
+        return { name: table, exists: true, status: 'ok' };
+      } catch (err: any) {
+        return { name: table, exists: false, status: 'error', message: err?.message };
+      }
+    })
+  );
+
+  const missing = results.filter((r) => !r.exists).map((r) => r.name);
+
+  return {
+    isConfigured: true,
+    allTablesOk: missing.length === 0,
+    tables: results,
+    missingTables: missing
+  };
+}
+
