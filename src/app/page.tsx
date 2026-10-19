@@ -151,31 +151,59 @@ export default async function HomePage() {
       {/* WHAT WE SUPPLY */}
       <section className="py-20 bg-[#f6f4ee] border-y border-[#e4e2da]">
         <div className="max-w-[1160px] mx-auto px-4 sm:px-6 space-y-8">
-          <div>
-            <h2 className="text-2xl sm:text-4xl font-extrabold font-serif text-[#1f2220]">What we supply</h2>
-            <p className="text-[#5b605b] text-base mt-1">
-              Three families cover most jobs. <Link href="/products" className="underline font-semibold">Full range and comparison</Link>.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <span className="text-xs font-bold font-serif text-[#9a6f0c] uppercase tracking-wider block mb-1">
+                Engineered Outdoor Solutions
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-extrabold font-serif text-[#1f2220]">
+                High-Performance Solar Street Lighting
+              </h2>
+              <p className="text-[#5b605b] text-base mt-2 max-w-2xl leading-relaxed">
+                Reliable dusk-to-dawn illumination built with high-grade LiFePO4 batteries, monocrystalline solar panels, and IP67 weather sealing.
+              </p>
+            </div>
+            <Link
+              href="/products"
+              className="text-[#9a6f0c] hover:text-[#1f2220] font-bold text-sm underline underline-offset-4 whitespace-nowrap self-start sm:self-auto"
+            >
+              View Full Range & Specifications &rarr;
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {products.slice(0, 3).map((prod) => (
-              <div key={prod.id} className="bg-white border border-[#e4e2da] rounded-lg overflow-hidden flex flex-col justify-between">
+              <div key={prod.id} className="bg-white border border-[#e4e2da] rounded-xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow">
                 <div>
-                  <div className="relative aspect-[4/3] bg-[#f6f4ee]">
+                  <div className="relative aspect-[4/3] bg-[#fcfbf7] p-4 flex items-center justify-center">
                     <Image
-                      src={prod.image_url || "/images/all-in-one.jpg"}
+                      src={prod.fixture_image_url || prod.image_url || "/images/products/solar-streetlight-600w-s1-fixture.webp"}
                       alt={prod.name}
                       fill
                       sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover"
+                      className="object-contain p-2 hover:scale-105 transition-transform duration-300"
                       unoptimized
                     />
+                    <div className="absolute top-3 left-3 bg-[#1f2220]/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                      {prod.category}
+                    </div>
                   </div>
                   <div className="p-5 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-[#9a6f0c]">{prod.wattage_range}</span>
+                      <span className="font-semibold text-emerald-700">IP67 Sealed</span>
+                    </div>
                     <h3 className="text-lg font-bold font-serif text-[#1f2220]">{prod.name}</h3>
-                    <p className="text-xs text-[#5b605b] leading-relaxed">{prod.description}</p>
+                    <p className="text-xs text-[#5b605b] leading-relaxed line-clamp-3">{prod.description}</p>
                   </div>
+                </div>
+                <div className="p-5 pt-0">
+                  <Link
+                    href={`/products/${prod.slug}`}
+                    className="block text-center bg-[#f6f4ee] hover:bg-[#E4B241] text-[#1f2220] font-bold text-xs py-2.5 px-4 rounded-lg transition-colors border border-[#e4e2da]"
+                  >
+                    View Specifications &rarr;
+                  </Link>
                 </div>
               </div>
             ))}
@@ -213,7 +241,7 @@ export default async function HomePage() {
 
           <div className="pt-2">
             <Link href="/applications" className="bg-white hover:bg-[#f6f4ee] text-[#1f2220] border-2 border-[#1f2220] font-bold px-6 py-3 rounded-md text-sm inline-block">
-              More about applications
+              Explore Lighting Solutions
             </Link>
           </div>
         </div>

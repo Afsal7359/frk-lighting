@@ -3,14 +3,15 @@
 import React, { useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
+import { INITIAL_SITE_SETTINGS } from '@/lib/data';
 
 interface QuoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  settings: SiteSettings;
+  settings?: SiteSettings;
 }
 
-export default function QuoteModal({ isOpen, onClose, settings }: QuoteModalProps) {
+export default function QuoteModal({ isOpen, onClose, settings = INITIAL_SITE_SETTINGS }: QuoteModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     contact: '',

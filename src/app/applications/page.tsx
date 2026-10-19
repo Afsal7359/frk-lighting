@@ -5,8 +5,8 @@ import { Metadata } from 'next';
 import { getApplications } from '@/lib/data';
 
 export const metadata: Metadata = {
-  title: 'Applications',
-  description: 'Where solar street lights work: roads, residential layouts, car parks, campuses, industry and farms.',
+  title: 'Lighting Solutions for Every Space | FRK Lighting Kerala',
+  description: 'From residential communities to commercial properties and public roads, discover solar lighting solutions designed for different environments across Kerala.',
 };
 
 export default async function ApplicationsPage() {
@@ -16,10 +16,12 @@ export default async function ApplicationsPage() {
     <div className="space-y-0 pb-20">
       {/* Sub Banner */}
       <section className="bg-[#f6f4ee] border-b border-[#e4e2da] py-14">
-        <div className="max-w-[1160px] mx-auto px-4 sm:px-6 space-y-2">
-          <h1 className="text-3xl sm:text-5xl font-extrabold font-serif text-[#1f2220]">Applications</h1>
-          <p className="text-base text-[#5b605b] max-w-xl">
-            Solar lighting suits almost any place that needs light and has sky above it.
+        <div className="max-w-[1160px] mx-auto px-4 sm:px-6 space-y-3">
+          <h1 className="text-3xl sm:text-5xl font-extrabold font-serif text-[#1f2220] tracking-tight leading-tight">
+            Lighting Solutions for Every Space.
+          </h1>
+          <p className="text-base sm:text-lg text-[#5b605b] max-w-3xl leading-relaxed">
+            From residential communities to commercial properties and public roads, Discover solar Lighting Solutions designed for different environments
           </p>
         </div>
       </section>

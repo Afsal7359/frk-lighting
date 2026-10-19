@@ -20,9 +20,10 @@ export default function Header({ settings }: HeaderProps) {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/products', label: 'Products' },
-    { href: '/applications', label: 'Applications' },
+    { href: '/installation-services', label: 'Installation Services' },
+    { href: '/applications', label: 'Lighting Solutions' },
+    { href: '/customer-stories', label: 'Customer Stories' },
     { href: '/about', label: 'About' },
-    { href: '/blog', label: 'Blog' },
     { href: '/contact', label: 'Contact' },
   ];
 

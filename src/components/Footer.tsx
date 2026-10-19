@@ -19,8 +19,8 @@ export default function Footer({ settings }: FooterProps) {
       {/* Mid CTA Banner */}
       <section className="bg-[#E4B241] py-14 border-t border-[#d8c58f]">
         <div className="max-w-[1160px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <h2 className="text-2xl md:text-3xl font-extrabold font-serif text-[#1f2220] max-w-xl">
-            Tell us about your site. We will size the lights.
+          <h2 className="text-2xl md:text-3xl font-extrabold font-serif text-[#1f2220] max-w-2xl leading-snug text-center md:text-left">
+            Tell us about your location and requirements. Our team will help you find a suitable Solar Lighting
           </h2>
           <a
             href={whatsappUrl}
@@ -28,7 +28,7 @@ export default function Footer({ settings }: FooterProps) {
             rel="noopener noreferrer"
             className="bg-[#242624] hover:bg-[#111211] text-white font-bold text-base px-7 py-3.5 rounded-md transition-all shadow-md whitespace-nowrap"
           >
-            Message us on WhatsApp
+            Chat on WhatsApp
           </a>
         </div>
       </section>
@@ -52,7 +52,9 @@ export default function Footer({ settings }: FooterProps) {
                 {[
                   { label: 'Home', href: '/' },
                   { label: 'Products', href: '/products' },
-                  { label: 'Applications', href: '/applications' },
+                  { label: 'Installation Services', href: '/installation-services' },
+                  { label: 'Lighting Solutions', href: '/applications' },
+                  { label: 'Customer Stories', href: '/customer-stories' },
                   { label: 'About', href: '/about' },
                   { label: 'Blog', href: '/blog' },
                   { label: 'Contact', href: '/contact' },

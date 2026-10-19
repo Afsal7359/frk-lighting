@@ -19,7 +19,9 @@ import {
   LogOut,
   Grid,
   ShieldCheck,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import {
   Blog,
@@ -27,7 +29,9 @@ import {
   ApplicationItem,
   Inquiry,
   SiteSettings,
-  KeepAliveLog
+  KeepAliveLog,
+  InstallationStory,
+  CustomerTestimonial
 } from '@/lib/types';
 import {
   getSiteSettings,
@@ -41,6 +45,12 @@ import {
   getApplications,
   saveApplication,
   deleteApplication,
+  getInstallationStories,
+  saveInstallationStory,
+  deleteInstallationStory,
+  getTestimonials,
+  saveTestimonial,
+  deleteTestimonial,
   getInquiries,
   updateInquiryStatus,
   getKeepAliveStatus,
@@ -51,7 +61,7 @@ import {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'settings' | 'blogs' | 'products' | 'applications' | 'inquiries' | 'keepalive'
+    'overview' | 'settings' | 'blogs' | 'products' | 'applications' | 'stories' | 'testimonials' | 'inquiries' | 'keepalive'
   >('overview');
 
   const [loading, setLoading] = useState(true);
@@ -60,6 +70,8 @@ export default function AdminDashboardPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [applications, setApplications] = useState<ApplicationItem[]>([]);
+  const [stories, setStories] = useState<InstallationStory[]>([]);
+  const [testimonials, setTestimonials] = useState<CustomerTestimonial[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [keepAliveData, setKeepAliveData] = useState<{
     lastPing: string;
@@ -75,6 +87,8 @@ export default function AdminDashboardPage() {
   const [editingBlog, setEditingBlog] = useState<Partial<Blog> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [editingApplication, setEditingApplication] = useState<Partial<ApplicationItem> | null>(null);
+  const [editingStory, setEditingStory] = useState<Partial<InstallationStory> | null>(null);
+  const [editingTestimonial, setEditingTestimonial] = useState<Partial<CustomerTestimonial> | null>(null);
   const [editingSettings, setEditingSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
 
   useEffect(() => {
@@ -93,13 +107,15 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [st, bl, pr, ap, inq, ka] = await Promise.all([
+      const [st, bl, pr, ap, inq, ka, str, testm] = await Promise.all([
         getSiteSettings(),
         getBlogs(),
         getProducts(),
         getApplications(),
         getInquiries(),
-        getKeepAliveStatus()
+        getKeepAliveStatus(),
+        getInstallationStories(),
+        getTestimonials()
       ]);
       setSettings(st);
       setEditingSettings(st);
@@ -108,6 +124,8 @@ export default function AdminDashboardPage() {
       setApplications(ap);
       setInquiries(inq);
       setKeepAliveData(ka);
+      setStories(str);
+      setTestimonials(testm);
     } catch (e) {
       console.error(e);
     } finally {
@@ -244,6 +262,48 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleSaveStorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStory?.title) return;
+    try {
+      await saveInstallationStory(editingStory);
+      setEditingStory(null);
+      await loadData();
+      showMsg('Customer installation story saved successfully!');
+    } catch (e) {
+      showMsg('Failed to save story', 'error');
+    }
+  };
+
+  const handleDeleteStoryClick = async (id: string) => {
+    if (confirm('Delete this customer story?')) {
+      await deleteInstallationStory(id);
+      await loadData();
+      showMsg('Story removed.');
+    }
+  };
+
+  const handleSaveTestimonialSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTestimonial?.name || !editingTestimonial?.comment) return;
+    try {
+      await saveTestimonial(editingTestimonial);
+      setEditingTestimonial(null);
+      await loadData();
+      showMsg('Customer testimonial saved successfully!');
+    } catch (e) {
+      showMsg('Failed to save testimonial', 'error');
+    }
+  };
+
+  const handleDeleteTestimonialClick = async (id: string) => {
+    if (confirm('Delete this testimonial?')) {
+      await deleteTestimonial(id);
+      await loadData();
+      showMsg('Testimonial removed.');
+    }
+  };
+
   const handleInquiryStatusChange = async (id: string, status: 'new' | 'contacted' | 'closed') => {
     await updateInquiryStatus(id, status);
     await loadData();
@@ -324,6 +384,8 @@ export default function AdminDashboardPage() {
           { id: 'blogs', label: 'Blogs & Guides', icon: FileText },
           { id: 'products', label: 'Products', icon: Package },
           { id: 'applications', label: 'Applications', icon: Grid },
+          { id: 'stories', label: `Customer Stories (${stories.length})`, icon: ImageIcon },
+          { id: 'testimonials', label: `Testimonials (${testimonials.length})`, icon: MessageSquare },
           { id: 'inquiries', label: `Quotes (${inquiries.filter((i) => i.status === 'new').length})`, icon: Inbox },
           { id: 'keepalive', label: 'DB & Security Check', icon: Database },
         ].map((tab) => {
@@ -349,33 +411,43 @@ export default function AdminDashboardPage() {
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">Blog Articles</span>
-              <span className="block text-2xl font-bold font-serif text-[#1f2220]">{blogs.length}</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{blogs.length}</span>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-1">
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">Active Products</span>
-              <span className="block text-2xl font-bold font-serif text-[#1f2220]">{products.length}</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{products.length}</span>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-1">
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">Applications</span>
-              <span className="block text-2xl font-bold font-serif text-[#1f2220]">{applications.length}</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{applications.length}</span>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-1">
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
+              <span className="text-xs text-[#5b605b]">Customer Stories</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{stories.length}</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
+              <span className="text-xs text-[#5b605b]">Testimonials</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{testimonials.length}</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">New Inquiries</span>
-              <span className="block text-2xl font-bold font-serif text-[#9a6f0c]">
+              <span className="block text-xl font-bold font-serif text-[#9a6f0c]">
                 {inquiries.filter((i) => i.status === 'new').length}
               </span>
             </div>
 
-            <div className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-1">
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">DB Status</span>
-              <span className="block text-base font-bold text-emerald-600 font-mono">Active</span>
-              <span className="text-[11px] text-[#5b605b] block">Last ping: {keepAliveData.hoursSinceLastPing}h ago</span>
+              <span className="block text-sm font-bold text-emerald-600 font-mono">Active</span>
+              <span className="text-[10px] text-[#5b605b] block">Last ping: {keepAliveData.hoursSinceLastPing}h</span>
             </div>
           </div>
 
@@ -962,6 +1034,354 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <p className="text-xs text-[#5b605b]">{app.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER STORIES TAB */}
+      {activeTab === 'stories' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[#1f2220]">Customer Installation Stories</h2>
+              <p className="text-xs text-[#5b605b]">Showcase verified project photos, categories, and client locations.</p>
+            </div>
+            <button
+              onClick={() =>
+                setEditingStory({
+                  title: '',
+                  location: 'Kozhikode, Kerala',
+                  category: 'Solar Street Lights',
+                  rating: 5,
+                  date: 'October 2025',
+                  image_url: '/images/products/600w-s1-install.webp',
+                  description: ''
+                })
+              }
+              className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Installation Story</span>
+            </button>
+          </div>
+
+          {editingStory && (
+            <form onSubmit={handleSaveStorySubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
+              <h3 className="text-lg font-bold text-[#1f2220] font-serif">
+                {editingStory.id ? 'Edit Installation Story' : 'New Installation Story'}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Project / Installation Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingStory.title || ''}
+                    onChange={(e) => setEditingStory({ ...editingStory, title: e.target.value })}
+                    placeholder="e.g. Kozhikode Residential Villa Project"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Category *</label>
+                  <select
+                    value={editingStory.category || 'Solar Street Lights'}
+                    onChange={(e) => setEditingStory({ ...editingStory, category: e.target.value as any })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  >
+                    <option value="Solar Street Lights">Solar Street Lights</option>
+                    <option value="Solar Flood Lights">Solar Flood Lights</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Residential">Residential</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Location *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingStory.location || ''}
+                    onChange={(e) => setEditingStory({ ...editingStory, location: e.target.value })}
+                    placeholder="e.g. Kozhikode, Kerala"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Installation Date</label>
+                  <input
+                    type="text"
+                    value={editingStory.date || ''}
+                    onChange={(e) => setEditingStory({ ...editingStory, date: e.target.value })}
+                    placeholder="e.g. March 2025"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+              </div>
+
+              {/* Story Photo Upload */}
+              <div className="bg-[#f6f4ee] p-4 rounded-md border border-[#e4e2da] space-y-2">
+                <span className="block text-xs font-bold text-[#1f2220] font-serif">Project Site Photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleFileUpload(file, (url) => {
+                        setEditingStory((prev) => (prev ? { ...prev, image_url: url } : null));
+                      });
+                    }
+                  }}
+                  className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#E4B241] file:text-[#1f2220] cursor-pointer"
+                />
+                <div className="pt-1 flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={editingStory.image_url || ''}
+                    onChange={(e) => setEditingStory({ ...editingStory, image_url: e.target.value })}
+                    placeholder="Or paste image URL"
+                    className="flex-1 bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                  />
+                  {editingStory.image_url && (
+                    <img src={editingStory.image_url} alt="Preview" className="w-14 h-10 object-cover rounded border" />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1f2220] mb-1">Project Description / Summary</label>
+                <textarea
+                  rows={3}
+                  value={editingStory.description || ''}
+                  onChange={(e) => setEditingStory({ ...editingStory, description: e.target.value })}
+                  placeholder="Detail the installation requirements, lights used, and outcome..."
+                  className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingStory(null)}
+                  className="px-4 py-2 rounded-md border border-[#c9c7bd] text-xs text-[#5b605b]"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs cursor-pointer">
+                  Save Story
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {stories.map((story) => (
+              <div key={story.id} className="bg-white rounded-lg border border-[#e4e2da] overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="h-44 bg-[#1f2220] relative overflow-hidden">
+                    <img src={story.image_url} alt={story.title} className="w-full h-full object-cover" />
+                    <span className="absolute top-2 right-2 bg-black/70 text-[#E4B241] text-[10px] font-bold px-2 py-0.5 rounded capitalize">
+                      {story.category.replace(/-/g, ' ')}
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-1.5">
+                    <h3 className="font-bold text-[#1f2220] text-sm font-serif line-clamp-1">{story.title}</h3>
+                    <p className="text-[11px] text-[#868379] font-medium flex items-center gap-1">
+                      <span>📍 {story.location}</span>
+                      {story.date && <span>• {story.date}</span>}
+                    </p>
+                    <p className="text-xs text-[#5b605b] line-clamp-2">{story.description}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 pt-2 border-t border-[#f0ede6] flex items-center justify-between">
+                  <div className="flex items-center text-[#E4B241] text-xs">
+                    {'★'.repeat(story.rating || 5)}
+                  </div>
+                  <div className="space-x-3">
+                    <button onClick={() => setEditingStory(story)} className="text-[#9a6f0c] text-xs font-semibold hover:underline">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDeleteStoryClick(story.id)} className="text-red-600 text-xs font-semibold hover:underline">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TESTIMONIALS TAB */}
+      {activeTab === 'testimonials' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[#1f2220]">Customer Testimonials</h2>
+              <p className="text-xs text-[#5b605b]">Manage client feedback, ratings, and avatar profiles.</p>
+            </div>
+            <button
+              onClick={() =>
+                setEditingTestimonial({
+                  name: '',
+                  role: 'Property Owner',
+                  location: 'Kozhikode, Kerala',
+                  rating: 5,
+                  comment: '',
+                  avatar_url: '/images/avatars/user1.svg'
+                })
+              }
+              className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Testimonial</span>
+            </button>
+          </div>
+
+          {editingTestimonial && (
+            <form onSubmit={handleSaveTestimonialSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
+              <h3 className="text-lg font-bold text-[#1f2220] font-serif">
+                {editingTestimonial.id ? 'Edit Testimonial' : 'New Customer Testimonial'}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Customer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.name || ''}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, name: e.target.value })}
+                    placeholder="e.g. Abdul Rahman K."
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Role / Designation</label>
+                  <input
+                    type="text"
+                    value={editingTestimonial.role || ''}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, role: e.target.value })}
+                    placeholder="e.g. Villa Owner, Resort Manager"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Location *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingTestimonial.location || ''}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, location: e.target.value })}
+                    placeholder="e.g. Wayanad, Kerala"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Rating</label>
+                  <select
+                    value={editingTestimonial.rating || 5}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, rating: Number(e.target.value) })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  >
+                    <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                    <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                    <option value="3">⭐⭐⭐ (3 Stars)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Avatar Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-[#1f2220] mb-2">Customer Avatar</label>
+                <div className="flex items-center gap-3">
+                  {['/images/avatars/user1.svg', '/images/avatars/user2.svg', '/images/avatars/user3.svg', '/images/avatars/user4.svg'].map((av) => (
+                    <button
+                      key={av}
+                      type="button"
+                      onClick={() => setEditingTestimonial({ ...editingTestimonial, avatar_url: av })}
+                      className={`p-1 rounded-full border-2 transition-all ${
+                        editingTestimonial.avatar_url === av ? 'border-[#E4B241] scale-110' : 'border-transparent opacity-60'
+                      }`}
+                    >
+                      <img src={av} alt="Avatar" className="w-10 h-10 rounded-full" />
+                    </button>
+                  ))}
+                  <input
+                    type="text"
+                    value={editingTestimonial.avatar_url || ''}
+                    onChange={(e) => setEditingTestimonial({ ...editingTestimonial, avatar_url: e.target.value })}
+                    placeholder="Or custom avatar URL"
+                    className="flex-1 bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1f2220] mb-1">Customer Review / Feedback *</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editingTestimonial.comment || ''}
+                  onChange={(e) => setEditingTestimonial({ ...editingTestimonial, comment: e.target.value })}
+                  placeholder="What did the customer say about the lights and service?"
+                  className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingTestimonial(null)}
+                  className="px-4 py-2 rounded-md border border-[#c9c7bd] text-xs text-[#5b605b]"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs cursor-pointer">
+                  Save Testimonial
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {testimonials.map((t) => (
+              <div key={t.id} className="bg-white p-5 rounded-lg border border-[#e4e2da] flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <img src={t.avatar_url || '/images/avatars/user1.svg'} alt={t.name} className="w-10 h-10 rounded-full border" />
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1f2220] font-serif">{t.name}</h4>
+                      <p className="text-[11px] text-[#868379]">{t.role ? `${t.role} • ` : ''}{t.location}</p>
+                    </div>
+                  </div>
+                  <div className="text-amber-500 text-xs">
+                    {'★'.repeat(t.rating || 5)}
+                  </div>
+                  <p className="text-xs text-[#5b605b] italic leading-relaxed">
+                    &ldquo;{t.comment}&rdquo;
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-[#f0ede6] flex items-center justify-end space-x-3">
+                  <button onClick={() => setEditingTestimonial(t)} className="text-[#9a6f0c] text-xs font-semibold hover:underline">
+                    Edit
+                  </button>
+                  <button onClick={() => handleDeleteTestimonialClick(t.id)} className="text-red-600 text-xs font-semibold hover:underline">
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>

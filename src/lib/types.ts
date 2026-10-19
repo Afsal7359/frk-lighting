@@ -15,6 +15,45 @@ export interface Blog {
   related_blog_ids?: string[];
 }
 
+export interface ProductSpecs {
+  panel?: {
+    size?: string;
+    power?: string;
+    voc?: string;
+    vmax?: string;
+    isc?: string;
+    imax?: string;
+    noct?: string;
+  };
+  battery?: {
+    name?: string;
+    capacity?: string;
+    lifespan?: string;
+    charging_time?: string;
+    backup?: string;
+    protections?: string;
+    ip_rating?: string;
+  };
+  lighting?: {
+    housing?: string;
+    lamp_material?: string;
+    pir_sensor?: string;
+    features?: string;
+    lumens?: string;
+    lumens_per_watt?: string;
+    color_temp?: string;
+    light_size?: string;
+    led_count?: string;
+    working_time?: string;
+    driver?: string;
+    beam_angle?: string;
+    waterproof?: string;
+    working_mode?: string;
+    installation_height?: string;
+    standards?: string;
+  };
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -27,6 +66,9 @@ export interface Product {
   why_choose: string;
   keep_in_mind: string;
   image_url?: string;
+  fixture_image_url?: string;
+  lifestyle_image_url?: string;
+  specs?: ProductSpecs;
   is_active: boolean;
   sort_order: number;
   created_at?: string;
@@ -73,4 +115,30 @@ export interface KeepAliveLog {
   status: 'success' | 'failed';
   notes: string;
   source: 'cron' | 'manual' | 'app_keepalive';
+}
+
+export interface InstallationStory {
+  id: string;
+  slug: string;
+  title: string;
+  location: string;
+  category: 'Solar Street Lights' | 'Solar Flood Lights' | 'Commercial' | 'Residential';
+  image_url: string;
+  description?: string;
+  date?: string;
+  rating?: number;
+  sort_order: number;
+  created_at?: string;
+}
+
+export interface CustomerTestimonial {
+  id: string;
+  name: string;
+  role?: string;
+  location: string;
+  comment: string;
+  rating: number;
+  avatar_url?: string;
+  sort_order: number;
+  created_at?: string;
 }

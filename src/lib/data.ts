@@ -1,4 +1,4 @@
-import { Blog, Product, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog } from './types';
+import { Blog, Product, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog, InstallationStory, CustomerTestimonial } from './types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
@@ -182,64 +182,334 @@ Opt for 120-degree wide angle flood optics to cover vast open spaces with minimu
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
-    id: "prod-1",
-    slug: "all-in-one-solar-street-light",
-    name: "All-in-one Solar Street Light",
-    subtitle: "Compact, integrated dusk-to-dawn lighting fixture",
-    description: "The solar panel, LiFePO4 battery, MPPT smart controller, and high-lumen LED matrix sit in a single weatherproof body. Mount on a pole and it is instantly operational.",
+    id: "prod-frk-600w-s1",
+    slug: "solar-streetlight-600w-s1",
+    name: "Solar Streetlight 600W-S1",
+    subtitle: "Compact All-In-One Dusk-To-Dawn Solar Street Light",
+    description: "Engineered for Kerala's coastal and tropical conditions. Features a 60W monocrystalline solar panel, high-grade LiFePO4 battery, and high-pressure aluminium die-cast housing with IP67 ingress protection.",
     category: "All-in-one",
-    wattage_range: "30W - 120W",
-    best_for: "Estate roads, internal lanes, walkway paths, resort grounds, and gates",
-    why_choose: "Fastest installation with zero cabling and a clean, modern aesthetic.",
-    keep_in_mind: "Solar panel size is bound to the fixture body, so 14+ hour backup may require split-type.",
-    image_url: "/images/frk4.webp",
+    wattage_range: "600W (60W Solar Panel)",
+    best_for: "Private compound roads, residential layouts, villa entrances, and farmhouses",
+    why_choose: "60,000mAh battery delivers 2 full days of rainy backup with IP67 waterproofing and over 10 years lifespan.",
+    keep_in_mind: "Recommended installation height is 5-6 meters for optimum 120° beam distribution.",
+    image_url: "/images/products/solar-streetlight-600w-s1-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-600w-s1-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-600w-s1-install.webp",
     is_active: true,
-    sort_order: 1
+    sort_order: 1,
+    specs: {
+      panel: {
+        size: "610 × 580 mm",
+        power: "60 W",
+        voc: "21.95 V",
+        vmax: "19.23 V",
+        isc: "3.30 A",
+        imax: "3.12 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "60,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 or above"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "2,178.04 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "6500K Cool White",
+        light_size: "21 × 41 × 8 cm",
+        led_count: "69 High-Lumen LEDs",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control (Dusk to Dawn) + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
   },
   {
-    id: "prod-2",
-    slug: "split-type-solar-street-light",
-    name: "Split-type Solar Street Light",
-    subtitle: "High-power modular lighting for heavy duty roads",
-    description: "The panel is mounted separately at optimal solar tilt on top of the pole, connected to a dedicated battery box and luminaire. Fully customizable panel and battery capacity.",
-    category: "Split-type",
-    wattage_range: "60W - 200W",
-    best_for: "Panchayat roads, highways, wide car parks, and monsoon-heavy regions",
-    why_choose: "Maximum solar capture, larger battery storage, and easy independent battery replacement.",
-    keep_in_mind: "Requires slightly more pole assembly compared to integrated all-in-one models.",
-    image_url: "/images/frk7.jpg",
+    id: "prod-frk-600w-s2",
+    slug: "solar-streetlight-600w-s2",
+    name: "Solar Streetlight 600W-S2",
+    subtitle: "High-Density 204 LED Matrix Solar Street Light with 80W Panel",
+    description: "Upgraded with an 80W high-efficiency solar panel and a dense 204 LED array, delivering uniform, glare-free light across public lanes and colony roads.",
+    category: "All-in-one",
+    wattage_range: "600W (80W Solar Panel)",
+    best_for: "Village Panchayat roads, commercial internal lanes, and large apartment perimeters",
+    why_choose: "Upgraded 80W solar panel charges 60,000mAh battery faster, paired with a 204 LED matrix for smooth road light distribution.",
+    keep_in_mind: "Includes intelligent infrared remote control with programmable timer and brightness dimming.",
+    image_url: "/images/products/solar-streetlight-600w-s2-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-600w-s2-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-600w-s2-install.webp",
     is_active: true,
-    sort_order: 2
+    sort_order: 2,
+    specs: {
+      panel: {
+        size: "610 × 580 mm",
+        power: "80 W",
+        voc: "21.95 V",
+        vmax: "19.23 V",
+        isc: "3.30 A",
+        imax: "3.12 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "60,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 or above"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "2,178.04 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "6500K Cool White",
+        light_size: "21 × 41 × 8 cm",
+        led_count: "204 LED Matrix",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
   },
   {
-    id: "prod-3",
-    slug: "solar-flood-light",
-    name: "Solar Flood Light",
-    subtitle: "Wide-angle high lumen flood illumination",
-    description: "Delivers broad, intense illumination for open grounds, building perimeters, commercial yards, and sports fields. Available in models up to 600W output.",
-    category: "Flood Light",
-    wattage_range: "100W - 600W",
-    best_for: "Commercial yards, parking areas, temple grounds, sports courts, and security perimeters",
-    why_choose: "Tremendous area coverage with zero grid electricity consumption or trenching costs.",
-    keep_in_mind: "Mount at appropriate height and downward angle to optimize beam spread and prevent glare.",
-    image_url: "/images/frk10.jpg",
+    id: "prod-frk-800w-warm",
+    slug: "solar-streetlight-800w-warm",
+    name: "Solar Streetlight 800W (Warm)",
+    subtitle: "Architectural 100W Panel Luminaire with 80,000mAh Battery",
+    description: "Specialized warm ambient solar street light tailored for hospitality venues, resorts, and heritage residences. Combines high-capacity 100W solar harvesting with warm, relaxing illumination.",
+    category: "Architectural & Landscape",
+    wattage_range: "800W (100W Solar Panel)",
+    best_for: "Luxury resorts, beachfront pathways, heritage estates, clubhouses, and garden drives",
+    why_choose: "Warm ambient glow that preserves evening aesthetics without harsh blue glare, supported by an oversized 80,000mAh battery.",
+    keep_in_mind: "Heavy-duty 760mm panel provides high rainy-day autonomy throughout monsoon months.",
+    image_url: "/images/products/solar-streetlight-800w-warm-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-800w-warm-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-800w-warm-install.webp",
     is_active: true,
-    sort_order: 3
+    sort_order: 3,
+    specs: {
+      panel: {
+        size: "760 × 580 × 25 mm",
+        power: "100 W",
+        voc: "21.95 V",
+        vmax: "19.23 V",
+        isc: "4.47 A",
+        imax: "4.23 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "80,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 (better than IP66)"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "2,178.04 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "3000K - 4000K Warm White",
+        light_size: "22 × 49 × 9 cm",
+        led_count: "160 High-Efficiency LEDs",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
   },
   {
-    id: "prod-4",
-    slug: "solar-garden-pathway-light",
-    name: "Garden & Pathway Lights",
-    subtitle: "Low-height architectural bollard & landscape solar lights",
-    description: "Elegant, low-profile solar fixtures designed for resort walkways, garden lawns, poolside paths, and villa entrances where tall street poles would be visually disruptive.",
-    category: "Landscape",
-    wattage_range: "10W - 30W",
-    best_for: "Gardens, resort paths, residential walkways, compound walls, and outdoor dining areas",
-    why_choose: "Soft warm illumination, ambient glare-free design, effortless ground stake or flange mounting.",
-    keep_in_mind: "Position in unshaded lawn areas to allow optimal daylight charging.",
-    image_url: "/images/frk12.jpg",
+    id: "prod-frk-800w-white",
+    slug: "solar-streetlight-800w-white",
+    name: "Solar Streetlight 800W (White)",
+    subtitle: "High-Lumen Crisp Daylight White Street Light",
+    description: "Built for maximum nighttime clarity and security. Equipped with 100W solar panel and 80,000mAh battery powering 88 high-output LEDs at 6500K daylight white.",
+    category: "Commercial",
+    wattage_range: "800W (100W Solar Panel)",
+    best_for: "Commercial complexes, school & college campuses, industrial yards, and arterial roads",
+    why_choose: "Superior 6500K daylight clarity combined with 100W heavy panel for uninterrupted operation.",
+    keep_in_mind: "First 6 hours operate at 100% full brightness, transitioning automatically to 80% to conserve battery until dawn.",
+    image_url: "/images/products/solar-streetlight-800w-white-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-800w-white-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-800w-white-install.webp",
     is_active: true,
-    sort_order: 4
+    sort_order: 4,
+    specs: {
+      panel: {
+        size: "760 × 580 × 25 mm",
+        power: "100 W",
+        voc: "21.95 V",
+        vmax: "19.23 V",
+        isc: "4.47 A",
+        imax: "4.23 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "80,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 (better than IP66)"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "2,178.04 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "6500K Crisp Daylight White",
+        light_size: "22 × 49 × 9 cm",
+        led_count: "88 High-Power LEDs",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
+  },
+  {
+    id: "prod-frk-1000w",
+    slug: "solar-streetlight-1000w",
+    name: "Solar Streetlight 1000W",
+    subtitle: "Heavy-Duty 4,884 Lumen Commercial Luminaire with 150W Panel",
+    description: "Heavy-duty commercial streetlight generating 4,884.84 lumens. Powered by an oversized 150W solar panel and massive 100,000mAh LiFePO4 battery pack for large open zones.",
+    category: "Heavy-Duty Commercial",
+    wattage_range: "1000W (150W Solar Panel)",
+    best_for: "Township main roads, factory perimeters, truck parking bays, and large sports grounds",
+    why_choose: "Blazing 4,884.84 lumens output with 150W panel and 100,000mAh storage for unmatched coverage and safety.",
+    keep_in_mind: "Requires standard pole diameter 60-76mm with heavy-duty civil foundation.",
+    image_url: "/images/products/solar-streetlight-1000w-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-1000w-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-1000w-install.webp",
+    is_active: true,
+    sort_order: 5,
+    specs: {
+      panel: {
+        size: "960 × 580 × 25 mm",
+        power: "150 W",
+        voc: "22.64 V",
+        vmax: "19.83 V",
+        isc: "5.35 A",
+        imax: "5.06 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "100,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 or above"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "4,884.84 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "6500K Daylight White",
+        light_size: "24 × 45 × 8 cm",
+        led_count: "144 High-Efficiency LEDs",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
+  },
+  {
+    id: "prod-frk-1200w",
+    slug: "solar-streetlight-1200w",
+    name: "Solar Streetlight 1200W",
+    subtitle: "Flagship Highway & Municipal Luminaire with 120,000mAh Battery",
+    description: "FRK's flagship ultra-high capacity solar street light. Delivers 4,884.84 lumens with 204 LEDs, 150W solar module, and an unmatched 120,000mAh battery bank for extreme autonomy.",
+    category: "Municipal & Highway Grade",
+    wattage_range: "1200W (150W Solar Panel)",
+    best_for: "Highway bypasses, Panchayat major roads, logistics depots, port perimeters, and railway siding areas",
+    why_choose: "Industry-leading 120,000mAh battery capacity guarantees uninterrupted lighting through continuous monsoon downpours.",
+    keep_in_mind: "Engineered for 5-6m pole mounting with reinforced die-cast bracket for high wind tolerance.",
+    image_url: "/images/products/solar-streetlight-1200w-fixture.webp",
+    fixture_image_url: "/images/products/solar-streetlight-1200w-fixture.webp",
+    lifestyle_image_url: "/images/products/solar-streetlight-1200w-install.webp",
+    is_active: true,
+    sort_order: 6,
+    specs: {
+      panel: {
+        size: "980 × 580 × 25 mm",
+        power: "150 W",
+        voc: "22.64 V",
+        vmax: "19.83 V",
+        isc: "5.35 A",
+        imax: "5.06 A",
+        noct: "45°C"
+      },
+      battery: {
+        name: "Lithium Iron Phosphate (LiFePO4)",
+        capacity: "120,000 mAh (Ensures Autonomy in Cloudy Days)",
+        lifespan: "Over 10 Years",
+        charging_time: "05 - 06 Hrs (Normal Sunlight)",
+        backup: "2 Days Full Backup",
+        protections: "Overcharge, Deep Discharge, Short Circuit, Over-current, Over-voltage, Under-voltage, Open Circuit",
+        ip_rating: "IP67 (better than IP65)"
+      },
+      lighting: {
+        housing: "High Pressure Aluminium Die-Cast",
+        lamp_material: "Die Casting Aluminium + PC Lens",
+        pir_sensor: "Optional (Energy Saving Feature)",
+        features: "Flicker-free, Dimming Option",
+        lumens: "4,884.84 lm",
+        lumens_per_watt: "140 lm/W",
+        color_temp: "6500K Daylight White",
+        light_size: "42 × 33 × 75 cm",
+        led_count: "204 High-Output LEDs",
+        working_time: "2 Days Backup (First 6 Hours 100% Brightness / After 6 Hours 80%)",
+        driver: "Inbuilt DC-DC",
+        beam_angle: "120° Wide Angle",
+        waterproof: "IP67 Waterproof",
+        working_mode: "Light Control + Remote Control",
+        installation_height: "5 - 6 m",
+        standards: "IS: 15885 / IS: 16104 / IEC 62384 (latest)"
+      }
+    }
   }
 ];
 
@@ -327,9 +597,113 @@ export const INITIAL_KEEPALIVE_LOGS: KeepAliveLog[] = [
   }
 ];
 
+export const INITIAL_INSTALLATION_STORIES: InstallationStory[] = [
+  {
+    id: "story-1",
+    slug: "residential-street-lighting",
+    title: "Residential Street Lighting",
+    location: "Kozhikode, Kerala",
+    category: "Solar Street Lights",
+    image_url: "/images/frk14.jpg",
+    description: "Complete dusk-to-dawn split-type solar street lighting project covering private colony access roads with high lumen efficiency.",
+    sort_order: 1
+  },
+  {
+    id: "story-2",
+    slug: "home-compound-lighting",
+    title: "Home Compound Lighting",
+    location: "Malappuram, Kerala",
+    category: "Residential",
+    image_url: "/images/frk15.jpg",
+    description: "Villa perimeter solar street lights installed on 5m powder-coated poles ensuring security and zero electricity costs.",
+    sort_order: 2
+  },
+  {
+    id: "story-3",
+    slug: "industrial-area-lighting",
+    title: "Industrial Area Lighting",
+    location: "Thrissur, Kerala",
+    category: "Commercial",
+    image_url: "/images/frk16.jpg",
+    description: "High-power solar flood lighting across factory dispatch bays, raw material yards, and perimeter security walls.",
+    sort_order: 3
+  },
+  {
+    id: "story-4",
+    slug: "resort-pathway-lighting",
+    title: "Resort Pathway Lighting",
+    location: "Wayanad, Kerala",
+    category: "Solar Street Lights",
+    image_url: "/images/frk13.jpg",
+    description: "Warm solar path fixtures installed across hillside eco-resort walkways without disrupting landscape soil or roots.",
+    sort_order: 4
+  },
+  {
+    id: "story-5",
+    slug: "village-road-project",
+    title: "Village Road Project",
+    location: "Kannur, Kerala",
+    category: "Solar Street Lights",
+    image_url: "/images/frk17.jpg",
+    description: "Panchayat road lighting initiative delivering uninterrupted 2-day monsoon backup for rural junctions and curves.",
+    sort_order: 5
+  },
+  {
+    id: "story-6",
+    slug: "commercial-property",
+    title: "Commercial Property",
+    location: "Kottayam, Kerala",
+    category: "Solar Flood Lights",
+    image_url: "/images/frk10.jpg",
+    description: "Commercial plaza parking and facade lighting powered entirely by rooftop solar arrays and LiFePO4 battery banks.",
+    sort_order: 6
+  }
+];
+
+export const INITIAL_TESTIMONIALS: CustomerTestimonial[] = [
+  {
+    id: "test-1",
+    name: "Shafeeq",
+    location: "Kozhikode, Kerala",
+    comment: "Very good product and professional installation. The brightness is excellent and working perfectly.",
+    rating: 5,
+    avatar_url: "/images/avatars/user1.svg",
+    sort_order: 1
+  },
+  {
+    id: "test-2",
+    name: "Ramesh",
+    location: "Malappuram, Kerala",
+    comment: "FRK team guided us well from selection to installation. Highly recommended.",
+    rating: 5,
+    avatar_url: "/images/avatars/user2.svg",
+    sort_order: 2
+  },
+  {
+    id: "test-3",
+    name: "Aji Kumar",
+    location: "Kannur, Kerala",
+    comment: "Very satisfied with the service. Installation was neat and on time.",
+    rating: 5,
+    avatar_url: "/images/avatars/user3.svg",
+    sort_order: 3
+  },
+  {
+    id: "test-4",
+    name: "Fathima",
+    location: "Kottayam, Kerala",
+    comment: "Good quality light and excellent customer support even after installation.",
+    rating: 5,
+    avatar_url: "/images/avatars/user4.svg",
+    sort_order: 4
+  }
+];
+
 let memoryBlogs = [...INITIAL_BLOGS];
 let memoryProducts = [...INITIAL_PRODUCTS];
 let memoryApplications = [...INITIAL_APPLICATIONS];
+let memoryInstallationStories = [...INITIAL_INSTALLATION_STORIES];
+let memoryTestimonials = [...INITIAL_TESTIMONIALS];
 let memorySettings = { ...INITIAL_SITE_SETTINGS };
 let memoryInquiries = [...INITIAL_INQUIRIES];
 let memoryKeepAliveLogs = [...INITIAL_KEEPALIVE_LOGS];
@@ -420,7 +794,8 @@ export async function saveBlog(blog: Partial<Blog>): Promise<Blog> {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const dbPayload: Record<string, any> = {
+      // 1. Core payload guaranteed to exist on all Supabase blogs tables
+      const corePayload: Record<string, any> = {
         slug: updatedBlog.slug,
         title: updatedBlog.title,
         excerpt: updatedBlog.excerpt,
@@ -434,24 +809,30 @@ export async function saveBlog(blog: Partial<Blog>): Promise<Blog> {
         updated_at: updatedBlog.updated_at
       };
 
-      if (updatedBlog.prev_blog_id) dbPayload.prev_blog_id = updatedBlog.prev_blog_id;
-      if (updatedBlog.next_blog_id) dbPayload.next_blog_id = updatedBlog.next_blog_id;
-      if (updatedBlog.related_blog_ids) dbPayload.related_blog_ids = updatedBlog.related_blog_ids;
+      // 2. Full payload including optional navigation columns
+      const fullPayload: Record<string, any> = { ...corePayload };
+      if (updatedBlog.prev_blog_id) fullPayload.prev_blog_id = updatedBlog.prev_blog_id;
+      if (updatedBlog.next_blog_id) fullPayload.next_blog_id = updatedBlog.next_blog_id;
+      if (updatedBlog.related_blog_ids) fullPayload.related_blog_ids = updatedBlog.related_blog_ids;
 
       if (isEdit && isUUID(blog.id)) {
-        dbPayload.id = blog.id;
-        const { data, error } = await supabase.from('blogs').upsert([dbPayload]).select();
+        fullPayload.id = blog.id;
+        corePayload.id = blog.id;
+        const { error } = await supabase.from('blogs').upsert([fullPayload]).select();
         if (error) {
-          console.warn("Supabase saveBlog upsert warning:", error);
-          await supabase.from('blogs').upsert([dbPayload], { onConflict: 'slug' });
+          console.warn("Supabase saveBlog full payload warning, falling back to core payload:", error.message);
+          await supabase.from('blogs').upsert([corePayload], { onConflict: 'slug' });
         }
       } else {
-        const { data, error } = await supabase.from('blogs').insert([dbPayload]).select();
+        const { data, error } = await supabase.from('blogs').insert([fullPayload]).select();
         if (!error && data && data.length > 0 && data[0].id) {
           updatedBlog.id = data[0].id;
         } else if (error) {
-          console.warn("Supabase saveBlog insert warning:", error);
-          await supabase.from('blogs').upsert([dbPayload], { onConflict: 'slug' });
+          console.warn("Supabase saveBlog full payload error, falling back to core payload:", error.message);
+          const { data: coreData, error: coreErr } = await supabase.from('blogs').upsert([corePayload], { onConflict: 'slug' }).select();
+          if (!coreErr && coreData && coreData.length > 0 && coreData[0].id) {
+            updatedBlog.id = coreData[0].id;
+          }
         }
       }
     } catch (e) {
@@ -496,7 +877,17 @@ export async function getProducts(): Promise<Product[]> {
   if (dbProducts.length > 0) {
     const dbSlugs = new Set(dbProducts.map((p) => p.slug));
     const extraMemory = memoryProducts.filter((p) => !dbSlugs.has(p.slug));
-    return [...dbProducts, ...extraMemory];
+    const enrichedDb = dbProducts.map((dbp) => {
+      const initial = INITIAL_PRODUCTS.find((ip) => ip.slug === dbp.slug);
+      return {
+        ...initial,
+        ...dbp,
+        fixture_image_url: dbp.fixture_image_url || initial?.fixture_image_url || dbp.image_url,
+        lifestyle_image_url: dbp.lifestyle_image_url || initial?.lifestyle_image_url,
+        specs: dbp.specs || initial?.specs
+      };
+    });
+    return [...enrichedDb, ...extraMemory];
   }
 
   return memoryProducts;
@@ -519,19 +910,56 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
     why_choose: product.why_choose || "Reliable performance",
     keep_in_mind: product.keep_in_mind || "Standard installation",
     image_url: product.image_url || "/images/frk4.webp",
+    fixture_image_url: product.fixture_image_url || product.image_url || "/images/frk4.webp",
+    lifestyle_image_url: product.lifestyle_image_url,
+    specs: product.specs,
     is_active: product.is_active !== undefined ? product.is_active : true,
     sort_order: product.sort_order || memoryProducts.length + 1
   };
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const dbPayload: Record<string, any> = { ...updatedProd };
-      if (!isUUID(product.id)) {
-        delete dbPayload.id;
-      }
-      const { data, error } = await supabase.from('products').upsert([dbPayload], { onConflict: 'slug' }).select();
-      if (!error && data && data.length > 0 && data[0].id) {
-        updatedProd.id = data[0].id;
+      const corePayload: Record<string, any> = {
+        slug: updatedProd.slug,
+        name: updatedProd.name,
+        subtitle: updatedProd.subtitle,
+        description: updatedProd.description,
+        category: updatedProd.category,
+        wattage_range: updatedProd.wattage_range,
+        best_for: updatedProd.best_for,
+        why_choose: updatedProd.why_choose,
+        keep_in_mind: updatedProd.keep_in_mind,
+        image_url: updatedProd.image_url,
+        is_active: updatedProd.is_active,
+        sort_order: updatedProd.sort_order
+      };
+
+      const fullPayload: Record<string, any> = {
+        ...corePayload,
+        fixture_image_url: updatedProd.fixture_image_url,
+        lifestyle_image_url: updatedProd.lifestyle_image_url,
+        specs: updatedProd.specs
+      };
+
+      if (isEdit && isUUID(product.id)) {
+        fullPayload.id = product.id;
+        corePayload.id = product.id;
+        const { error } = await supabase.from('products').upsert([fullPayload], { onConflict: 'slug' }).select();
+        if (error) {
+          console.warn("Supabase saveProduct full payload fallback:", error.message);
+          await supabase.from('products').upsert([corePayload], { onConflict: 'slug' });
+        }
+      } else {
+        const { data, error } = await supabase.from('products').insert([fullPayload]).select();
+        if (!error && data && data.length > 0 && data[0].id) {
+          updatedProd.id = data[0].id;
+        } else if (error) {
+          console.warn("Supabase saveProduct full payload insert fallback:", error.message);
+          const { data: cData } = await supabase.from('products').upsert([corePayload], { onConflict: 'slug' }).select();
+          if (cData && cData.length > 0 && cData[0].id) {
+            updatedProd.id = cData[0].id;
+          }
+        }
       }
     } catch (e) {
       console.warn("Supabase saveProduct error:", e);
@@ -748,4 +1176,154 @@ export async function getKeepAliveStatus(): Promise<{
     hoursSinceLastPing: hoursSince,
     logs
   };
+}
+
+// --- INSTALLATION STORIES ---
+export async function getInstallationStories(): Promise<InstallationStory[]> {
+  let dbStories: InstallationStory[] = [];
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('installation_stories').select('*').order('sort_order', { ascending: true });
+      if (!error && data && data.length > 0) {
+        dbStories = data as InstallationStory[];
+      }
+    } catch (e) {
+      console.warn("Supabase installation_stories fetch failed:", e);
+    }
+  }
+
+  if (dbStories.length > 0) {
+    const dbSlugs = new Set(dbStories.map((s) => s.slug));
+    const extraMemory = memoryInstallationStories.filter((s) => !dbSlugs.has(s.slug));
+    return [...dbStories, ...extraMemory];
+  }
+
+  return memoryInstallationStories;
+}
+
+export async function saveInstallationStory(story: Partial<InstallationStory>): Promise<InstallationStory> {
+  const isEdit = Boolean(story.id);
+  const id = story.id || `story-${Date.now()}`;
+  const slug = story.slug || story.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `story-${Date.now()}`;
+
+  const updatedStory: InstallationStory = {
+    id,
+    slug,
+    title: story.title || "Solar Installation Project",
+    location: story.location || "Kerala, India",
+    category: story.category || "Solar Street Lights",
+    image_url: story.image_url || "/images/frk14.jpg",
+    description: story.description || "",
+    sort_order: story.sort_order || memoryInstallationStories.length + 1,
+    created_at: story.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const dbPayload: Record<string, any> = { ...updatedStory };
+      if (!isUUID(story.id)) {
+        delete dbPayload.id;
+      }
+      const { data, error } = await supabase.from('installation_stories').upsert([dbPayload], { onConflict: 'slug' }).select();
+      if (!error && data && data.length > 0 && data[0].id) {
+        updatedStory.id = data[0].id;
+      }
+    } catch (e) {
+      console.warn("Supabase saveInstallationStory warning:", e);
+    }
+  }
+
+  if (isEdit) {
+    memoryInstallationStories = memoryInstallationStories.map((s) => (s.id === updatedStory.id || s.slug === updatedStory.slug ? updatedStory : s));
+  } else {
+    memoryInstallationStories = [updatedStory, ...memoryInstallationStories.filter((s) => s.slug !== updatedStory.slug)];
+  }
+
+  return updatedStory;
+}
+
+export async function deleteInstallationStory(id: string): Promise<boolean> {
+  memoryInstallationStories = memoryInstallationStories.filter((s) => s.id !== id);
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase.from('installation_stories').delete().eq('id', id);
+    } catch (e) {
+      console.warn("Supabase deleteInstallationStory error:", e);
+    }
+  }
+  return true;
+}
+
+// --- TESTIMONIALS ---
+export async function getTestimonials(): Promise<CustomerTestimonial[]> {
+  let dbTestimonials: CustomerTestimonial[] = [];
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('testimonials').select('*').order('sort_order', { ascending: true });
+      if (!error && data && data.length > 0) {
+        dbTestimonials = data as CustomerTestimonial[];
+      }
+    } catch (e) {
+      console.warn("Supabase testimonials fetch failed:", e);
+    }
+  }
+
+  if (dbTestimonials.length > 0) {
+    const dbIds = new Set(dbTestimonials.map((t) => t.id));
+    const extraMemory = memoryTestimonials.filter((t) => !dbIds.has(t.id));
+    return [...dbTestimonials, ...extraMemory];
+  }
+
+  return memoryTestimonials;
+}
+
+export async function saveTestimonial(testimonial: Partial<CustomerTestimonial>): Promise<CustomerTestimonial> {
+  const isEdit = Boolean(testimonial.id);
+  const id = testimonial.id || `test-${Date.now()}`;
+
+  const updatedTestimonial: CustomerTestimonial = {
+    id,
+    name: testimonial.name || "Customer",
+    location: testimonial.location || "Kerala, India",
+    comment: testimonial.comment || "Great service and lighting performance.",
+    rating: testimonial.rating || 5,
+    avatar_url: testimonial.avatar_url || "/images/avatars/user1.svg",
+    sort_order: testimonial.sort_order || memoryTestimonials.length + 1,
+    created_at: testimonial.created_at || new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const dbPayload: Record<string, any> = { ...updatedTestimonial };
+      if (!isUUID(testimonial.id)) {
+        delete dbPayload.id;
+      }
+      const { data, error } = await supabase.from('testimonials').upsert([dbPayload]).select();
+      if (!error && data && data.length > 0 && data[0].id) {
+        updatedTestimonial.id = data[0].id;
+      }
+    } catch (e) {
+      console.warn("Supabase saveTestimonial warning:", e);
+    }
+  }
+
+  if (isEdit) {
+    memoryTestimonials = memoryTestimonials.map((t) => (t.id === updatedTestimonial.id ? updatedTestimonial : t));
+  } else {
+    memoryTestimonials = [updatedTestimonial, ...memoryTestimonials.filter((t) => t.id !== updatedTestimonial.id)];
+  }
+
+  return updatedTestimonial;
+}
+
+export async function deleteTestimonial(id: string): Promise<boolean> {
+  memoryTestimonials = memoryTestimonials.filter((t) => t.id !== id);
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase.from('testimonials').delete().eq('id', id);
+    } catch (e) {
+      console.warn("Supabase deleteTestimonial error:", e);
+    }
+  }
+  return true;
 }
