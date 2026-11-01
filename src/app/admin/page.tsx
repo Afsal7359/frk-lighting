@@ -30,7 +30,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  Eye
+  Eye,
+  Wrench,
+  ListOrdered,
+  MapPin,
+  Compass,
+  FileCheck,
+  CalendarCheck,
+  Headphones,
+  Sparkles,
+  Zap,
+  Truck
 } from 'lucide-react';
 import {
   Blog,
@@ -40,7 +50,10 @@ import {
   SiteSettings,
   KeepAliveLog,
   InstallationStory,
-  CustomerTestimonial
+  CustomerTestimonial,
+  InstallationServiceItem,
+  InstallationProcessStep,
+  InstallationPageSettings
 } from '@/lib/types';
 import {
   getSiteSettings,
@@ -66,7 +79,16 @@ import {
   recordKeepAlivePing,
   checkDatabaseSchema,
   DatabaseTableStatus,
-  INITIAL_SITE_SETTINGS
+  INITIAL_SITE_SETTINGS,
+  INITIAL_INSTALLATION_PAGE_SETTINGS,
+  getInstallationPageSettings,
+  updateInstallationPageSettings,
+  getInstallationServices,
+  saveInstallationService,
+  deleteInstallationService,
+  getInstallationProcessSteps,
+  saveInstallationProcessStep,
+  deleteInstallationProcessStep
 } from '@/lib/data';
 
 const MIGRATION_SQL = `-- FRK Lighting Solutions - Supabase Table Creation Migration
@@ -151,7 +173,7 @@ ON CONFLICT DO NOTHING;`;
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'settings' | 'blogs' | 'products' | 'applications' | 'stories' | 'testimonials' | 'inquiries' | 'keepalive'
+    'overview' | 'settings' | 'blogs' | 'products' | 'applications' | 'installation' | 'stories' | 'testimonials' | 'inquiries' | 'keepalive'
   >('overview');
 
   const [loading, setLoading] = useState(true);
@@ -163,6 +185,13 @@ export default function AdminDashboardPage() {
   const [stories, setStories] = useState<InstallationStory[]>([]);
   const [testimonials, setTestimonials] = useState<CustomerTestimonial[]>([]);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [installationSettings, setInstallationSettings] = useState<InstallationPageSettings>(INITIAL_INSTALLATION_PAGE_SETTINGS);
+  const [editingInstallationSettings, setEditingInstallationSettings] = useState<InstallationPageSettings>(INITIAL_INSTALLATION_PAGE_SETTINGS);
+  const [installationServices, setInstallationServices] = useState<InstallationServiceItem[]>([]);
+  const [editingInstallationService, setEditingInstallationService] = useState<Partial<InstallationServiceItem> | null>(null);
+  const [installationProcessSteps, setInstallationProcessSteps] = useState<InstallationProcessStep[]>([]);
+  const [editingProcessStep, setEditingProcessStep] = useState<Partial<InstallationProcessStep> | null>(null);
+  const [activeInstallationSubTab, setActiveInstallationSubTab] = useState<'cards' | 'steps' | 'settings'>('cards');
   const [keepAliveData, setKeepAliveData] = useState<{
     lastPing: string;
     status: 'active' | 'pending';
@@ -194,22 +223,35 @@ export default function AdminDashboardPage() {
   const [editingSettings, setEditingSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isAuth = localStorage.getItem('frk_admin_auth');
-      const email = localStorage.getItem('frk_admin_email') || 'admin@frklighting.com';
-      setAdminEmail(email);
-      if (!isAuth) {
+    let isMounted = true;
+    const verifyAuth = async () => {
+      try {
+        const res = await fetch('/api/admin/verify');
+        if (!res.ok) {
+          router.push('/admin/login');
+          return;
+        }
+        const data = await res.json();
+        if (!data.authenticated) {
+          router.push('/admin/login');
+          return;
+        }
+        if (isMounted) {
+          setAdminEmail(data.email || 'admin@frklighting.com');
+          loadData();
+        }
+      } catch {
         router.push('/admin/login');
-        return;
       }
-    }
-    loadData();
+    };
+    verifyAuth();
+    return () => { isMounted = false; };
   }, [router]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [st, bl, pr, ap, inq, ka, str, testm, schema] = await Promise.all([
+      const [st, bl, pr, ap, inq, ka, str, testm, schema, instSet, instServ, instSteps] = await Promise.all([
         getSiteSettings(),
         getBlogs(),
         getProducts(),
@@ -218,7 +260,10 @@ export default function AdminDashboardPage() {
         getKeepAliveStatus(),
         getInstallationStories(),
         getTestimonials(),
-        checkDatabaseSchema()
+        checkDatabaseSchema(),
+        getInstallationPageSettings(),
+        getInstallationServices(),
+        getInstallationProcessSteps()
       ]);
       setSettings(st);
       setEditingSettings(st);
@@ -230,6 +275,10 @@ export default function AdminDashboardPage() {
       setStories(str);
       setTestimonials(testm);
       setSchemaStatus({ ...schema, checked: true });
+      setInstallationSettings(instSet);
+      setEditingInstallationSettings(instSet);
+      setInstallationServices(instServ);
+      setInstallationProcessSteps(instSteps);
     } catch (e) {
       console.error(e);
     } finally {
@@ -293,12 +342,18 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('frk_admin_auth');
       localStorage.removeItem('frk_admin_email');
     }
     router.push('/admin/login');
+    router.refresh();
   };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -522,20 +577,88 @@ export default function AdminDashboardPage() {
       await saveApplication(editingApplication);
       setEditingApplication(null);
       await loadData();
-      showMsg('Application area saved successfully to Supabase!');
-    } catch (err: any) {
-      showMsg(`Failed to save application area: ${err?.message || err}`, 'error');
+      showMsg('Lighting solution saved successfully to Supabase!');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showMsg(`Failed to save lighting solution: ${msg}`, 'error');
     }
   };
 
   const handleDeleteApplicationClick = async (id: string) => {
-    if (confirm('Delete this application area?')) {
+    if (confirm('Delete this lighting solution?')) {
       try {
         await deleteApplication(id);
         await loadData();
-        showMsg('Application area removed.');
-      } catch (err: any) {
-        showMsg(`Failed to delete application area: ${err?.message || err}`, 'error');
+        showMsg('Lighting solution removed.');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        showMsg(`Failed to delete lighting solution: ${msg}`, 'error');
+      }
+    }
+  };
+
+  const handleSaveInstallationSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateInstallationPageSettings(editingInstallationSettings);
+      setInstallationSettings(editingInstallationSettings);
+      showMsg('Installation page settings saved successfully to Supabase!');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showMsg(`Failed to save installation settings: ${msg}`, 'error');
+    }
+  };
+
+  const handleSaveInstallationServiceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInstallationService?.title) return;
+    try {
+      await saveInstallationService(editingInstallationService);
+      setEditingInstallationService(null);
+      await loadData();
+      showMsg('Installation service topic saved successfully to Supabase!');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showMsg(`Failed to save installation service: ${msg}`, 'error');
+    }
+  };
+
+  const handleDeleteInstallationServiceClick = async (id: string) => {
+    if (confirm('Delete this installation service topic?')) {
+      try {
+        await deleteInstallationService(id);
+        await loadData();
+        showMsg('Installation service topic removed.');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        showMsg(`Failed to delete installation service: ${msg}`, 'error');
+      }
+    }
+  };
+
+  const handleSaveProcessStepSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProcessStep?.name) return;
+    try {
+      await saveInstallationProcessStep(editingProcessStep);
+      setEditingProcessStep(null);
+      await loadData();
+      showMsg('Process workflow stage saved successfully to Supabase!');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showMsg(`Failed to save process stage: ${msg}`, 'error');
+    }
+  };
+
+  const handleDeleteProcessStepClick = async (id: string) => {
+    if (confirm('Delete this process workflow stage?')) {
+      try {
+        await deleteInstallationProcessStep(id);
+        await loadData();
+        showMsg('Process workflow stage removed.');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        showMsg(`Failed to delete process stage: ${msg}`, 'error');
       }
     }
   };
@@ -760,7 +883,8 @@ export default function AdminDashboardPage() {
           { id: 'settings', label: 'Site Content', icon: Settings },
           { id: 'blogs', label: 'Blogs & Guides', icon: FileText },
           { id: 'products', label: 'Products', icon: Package },
-          { id: 'applications', label: 'Applications', icon: Grid },
+          { id: 'applications', label: 'Lighting Solutions', icon: Grid },
+          { id: 'installation', label: `Installation Services (${installationServices.length})`, icon: Wrench },
           { id: 'stories', label: `Customer Stories (${stories.length})`, icon: ImageIcon },
           { id: 'testimonials', label: `Testimonials (${testimonials.length})`, icon: MessageSquare },
           { id: 'inquiries', label: `Quotes (${inquiries.filter((i) => i.status === 'new').length})`, icon: Inbox },
@@ -788,7 +912,7 @@ export default function AdminDashboardPage() {
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-4">
             <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
               <span className="text-xs text-[#5b605b]">Blog Articles</span>
               <span className="block text-xl font-bold font-serif text-[#1f2220]">{blogs.length}</span>
@@ -800,8 +924,13 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
-              <span className="text-xs text-[#5b605b]">Applications</span>
+              <span className="text-xs text-[#5b605b]">Lighting Solutions</span>
               <span className="block text-xl font-bold font-serif text-[#1f2220]">{applications.length}</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
+              <span className="text-xs text-[#5b605b]">Installation Services</span>
+              <span className="block text-xl font-bold font-serif text-[#1f2220]">{installationServices.length}</span>
             </div>
 
             <div className="bg-white p-4 rounded-lg border border-[#e4e2da] space-y-1">
@@ -1792,23 +1921,27 @@ export default function AdminDashboardPage() {
       )}
 
       {/* APPLICATIONS MANAGER TAB */}
+      {/* LIGHTING SOLUTIONS TAB (FORMERLY APPLICATIONS) */}
       {activeTab === 'applications' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-serif text-[#1f2220]">Manage Application Areas & Photos</h2>
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[#1f2220]">Manage Lighting Solutions & Application Areas</h2>
+              <p className="text-xs text-[#5b605b]">Showcase where FRK solar street lights and fixtures are deployed (Roads, Resorts, Villas, Industrial).</p>
+            </div>
             <button
               onClick={() => setEditingApplication({ title: '', description: '' })}
               className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Application Area</span>
+              <span>Add Lighting Solution</span>
             </button>
           </div>
 
           {editingApplication && (
             <form onSubmit={handleSaveApplicationSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
               <h3 className="text-lg font-bold text-[#1f2220] font-serif">
-                {editingApplication.id ? 'Edit Application Area' : 'Add Application Area'}
+                {editingApplication.id ? 'Edit Lighting Solution' : 'Add Lighting Solution'}
               </h3>
 
               <div>
@@ -1816,15 +1949,16 @@ export default function AdminDashboardPage() {
                 <input
                   type="text"
                   required
+                  placeholder="e.g. Roads & Highways, Eco Resorts, Villa Compounds"
                   value={editingApplication.title || ''}
                   onChange={(e) => setEditingApplication({ ...editingApplication, title: e.target.value })}
                   className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
                 />
               </div>
 
-              {/* Application Photo Upload */}
+              {/* Lighting Solution Photo Upload */}
               <div className="bg-[#f6f4ee] p-4 rounded-md border border-[#e4e2da] space-y-2">
-                <span className="block text-xs font-bold text-[#1f2220] font-serif">Application Area Photo</span>
+                <span className="block text-xs font-bold text-[#1f2220] font-serif">Lighting Solution Photo</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1839,9 +1973,18 @@ export default function AdminDashboardPage() {
                   }}
                   className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#E4B241] file:text-[#1f2220] cursor-pointer"
                 />
+                <div className="text-[11px] text-[#5b605b]">Or enter direct photo URL:</div>
+                <input
+                  type="text"
+                  placeholder="https://... or /images/..."
+                  value={editingApplication.image_url || ''}
+                  onChange={(e) => setEditingApplication({ ...editingApplication, image_url: e.target.value })}
+                  className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                />
                 {editingApplication.image_url && (
                   <div className="pt-2 flex items-center gap-3">
-                    <img src={editingApplication.image_url} alt="App Preview" className="w-16 h-12 object-cover rounded border" />
+                    <img src={editingApplication.image_url} alt="App Preview" className="w-20 h-14 object-cover rounded border" />
+                    <span className="text-xs text-emerald-700 font-semibold">✓ Image Selected</span>
                   </div>
                 )}
               </div>
@@ -1850,6 +1993,7 @@ export default function AdminDashboardPage() {
                 <label className="block text-xs font-semibold text-[#1f2220] mb-1">Description</label>
                 <textarea
                   rows={3}
+                  placeholder="Explain the lighting setup, recommended pole heights, and typical lumens used..."
                   value={editingApplication.description || ''}
                   onChange={(e) => setEditingApplication({ ...editingApplication, description: e.target.value })}
                   className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
@@ -1865,7 +2009,7 @@ export default function AdminDashboardPage() {
                   Cancel
                 </button>
                 <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs">
-                  Save Application Area
+                  Save Lighting Solution
                 </button>
               </div>
             </form>
@@ -1892,6 +2036,585 @@ export default function AdminDashboardPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* INSTALLATION SERVICES TAB */}
+      {activeTab === 'installation' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[#1f2220]">Manage Installation Services & Process</h2>
+              <p className="text-xs text-[#5b605b]">
+                Edit installation service topics, 6-stage workflow process, hero banner, and district coverage texts.
+              </p>
+            </div>
+            <a
+              href="/installation-services"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white border border-[#c9c7bd] hover:border-[#1f2220] text-[#1f2220] font-semibold px-3 py-1.5 rounded-md text-xs inline-flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Preview Live Page</span>
+            </a>
+          </div>
+
+          {/* Sub Navigation */}
+          <div className="flex flex-wrap gap-2 border-b border-[#e4e2da] pb-2">
+            {[
+              { id: 'cards', label: `Service Cards (${installationServices.length})`, icon: Wrench },
+              { id: 'steps', label: `Process Stages (${installationProcessSteps.length})`, icon: ListOrdered },
+              { id: 'settings', label: 'Page Headers & District Coverage', icon: Settings },
+            ].map((subTab) => {
+              const Icon = subTab.icon;
+              const isSubActive = activeInstallationSubTab === subTab.id;
+              return (
+                <button
+                  key={subTab.id}
+                  onClick={() => setActiveInstallationSubTab(subTab.id as any)}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    isSubActive
+                      ? 'bg-[#1f2220] text-white shadow-xs'
+                      : 'bg-[#f6f4ee] border border-[#e4e2da] text-[#1f2220] hover:bg-[#e4e2da]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{subTab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 1. SERVICE CARDS SUB-TAB */}
+          {activeInstallationSubTab === 'cards' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-[#1f2220] font-serif">Comprehensive Installation Offerings</h3>
+                  <p className="text-xs text-[#5b605b]">Cards displayed in &quot;Our Complete Installation Services&quot; grid.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setEditingInstallationService({
+                      num: String(installationServices.length + 1).padStart(2, '0'),
+                      title: '',
+                      badge: `Step ${installationServices.length + 1} • Technical`,
+                      summary: '',
+                      points: [],
+                      image: '/images/frk14.jpg',
+                      icon_name: 'Wrench',
+                      sort_order: installationServices.length + 1,
+                    })
+                  }
+                  className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Service Card</span>
+                </button>
+              </div>
+
+              {editingInstallationService && (
+                <form onSubmit={handleSaveInstallationServiceSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
+                  <h4 className="text-lg font-bold text-[#1f2220] font-serif">
+                    {editingInstallationService.id ? 'Edit Installation Service Card' : 'Add Installation Service Card'}
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Step Number (e.g. 01, 02) *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editingInstallationService.num || ''}
+                        onChange={(e) => setEditingInstallationService({ ...editingInstallationService, num: e.target.value })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Service Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Site Assessment, Product Sizing"
+                        value={editingInstallationService.title || ''}
+                        onChange={(e) => setEditingInstallationService({ ...editingInstallationService, title: e.target.value })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Badge Tag</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Step 1 • On-Site Survey"
+                        value={editingInstallationService.badge || ''}
+                        onChange={(e) => setEditingInstallationService({ ...editingInstallationService, badge: e.target.value })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Card Icon</label>
+                      <select
+                        value={editingInstallationService.icon_name || 'Wrench'}
+                        onChange={(e) => setEditingInstallationService({ ...editingInstallationService, icon_name: e.target.value })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      >
+                        <option value="MapPin">MapPin (Location / Site Survey)</option>
+                        <option value="Compass">Compass (Orientation & Engineering)</option>
+                        <option value="FileCheck">FileCheck (Quotation & Transparent Pricing)</option>
+                        <option value="CalendarCheck">CalendarCheck (Planning & Schedules)</option>
+                        <option value="Wrench">Wrench (Tools & Professional Mounting)</option>
+                        <option value="Headphones">Headphones (After-Sales Support)</option>
+                        <option value="Sparkles">Sparkles (Turnkey Guarantee)</option>
+                        <option value="ShieldCheck">ShieldCheck (Warranty Protection)</option>
+                        <option value="Sun">Sun (Solar Radiation & Power)</option>
+                        <option value="Truck">Truck (Delivery & Logistics)</option>
+                        <option value="Zap">Zap (Electrical Lighting)</option>
+                        <option value="Settings">Settings (Maintenance & Calibrations)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Sort Order</label>
+                      <input
+                        type="number"
+                        value={editingInstallationService.sort_order ?? 1}
+                        onChange={(e) => setEditingInstallationService({ ...editingInstallationService, sort_order: parseInt(e.target.value) || 1 })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Photo Upload */}
+                  <div className="bg-[#f6f4ee] p-4 rounded-md border border-[#e4e2da] space-y-2">
+                    <span className="block text-xs font-bold text-[#1f2220] font-serif">Service Photo (ImageKit CDN or URL)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingImage}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleFileUpload(file, (url) => {
+                            setEditingInstallationService((prev) => (prev ? { ...prev, image: url } : null));
+                          });
+                        }
+                      }}
+                      className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#E4B241] file:text-[#1f2220] cursor-pointer"
+                    />
+                    <div className="text-[11px] text-[#5b605b]">Or direct image URL:</div>
+                    <input
+                      type="text"
+                      placeholder="https://... or /images/frk14.jpg"
+                      value={editingInstallationService.image || ''}
+                      onChange={(e) => setEditingInstallationService({ ...editingInstallationService, image: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                    />
+                    {editingInstallationService.image && (
+                      <div className="pt-2 flex items-center gap-3">
+                        <img src={editingInstallationService.image} alt="Service Preview" className="w-24 h-16 object-cover rounded border" />
+                        <span className="text-xs text-emerald-700 font-semibold">✓ Image Loaded</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Summary Description *</label>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="Brief description of what this service covers..."
+                      value={editingInstallationService.summary || ''}
+                      onChange={(e) => setEditingInstallationService({ ...editingInstallationService, summary: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">
+                      Key Technical Checklist Points (Enter each bullet on a new line)
+                    </label>
+                    <textarea
+                      rows={4}
+                      placeholder="Sunlight hours & shadow analysis&#10;Road width and pole spacing calculation&#10;Ground & soil foundation depth"
+                      value={(editingInstallationService.points || []).join('\n')}
+                      onChange={(e) => {
+                        const lines = e.target.value.split('\n').filter((l) => l.trim().length > 0);
+                        setEditingInstallationService({ ...editingInstallationService, points: lines });
+                      }}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] font-mono"
+                    />
+                    <span className="text-[11px] text-[#5b605b]">
+                      Current points count: {(editingInstallationService.points || []).length}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingInstallationService(null)}
+                      className="px-4 py-2 rounded-md border border-[#c9c7bd] text-xs text-[#5b605b]"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs cursor-pointer">
+                      Save Installation Service Card
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Grid of Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {installationServices.map((item) => (
+                  <div key={item.id} className="bg-white border border-[#e4e2da] rounded-xl p-5 flex flex-col justify-between space-y-4 hover:border-[#E4B241] transition-colors shadow-xs">
+                    <div className="space-y-3">
+                      <div className="relative aspect-[16/9] rounded-lg overflow-hidden bg-[#f6f4ee] border border-[#e4e2da]">
+                        <img src={item.image || '/images/frk14.jpg'} alt={item.title} className="w-full h-full object-cover" />
+                        <span className="absolute top-2 left-2 bg-[#1f2220] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                          {item.num}
+                        </span>
+                        <span className="absolute top-2 right-2 bg-white/90 text-[#9a6f0c] text-[10px] font-bold px-2 py-0.5 rounded">
+                          Order: {item.sort_order}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-[#9a6f0c] uppercase tracking-wider block">{item.badge}</span>
+                        <h4 className="font-bold text-base text-[#1f2220] font-serif mt-0.5">{item.title}</h4>
+                        <p className="text-xs text-[#5b605b] mt-1 line-clamp-2">{item.summary}</p>
+                      </div>
+
+                      {item.points && item.points.length > 0 && (
+                        <div className="pt-2 border-t border-[#f0eee6]">
+                          <span className="text-[11px] font-semibold text-[#1f2220] block mb-1">Key Deliverables:</span>
+                          <ul className="text-[11px] text-[#5b605b] space-y-1">
+                            {item.points.slice(0, 3).map((pt, i) => (
+                              <li key={i} className="flex items-start gap-1.5">
+                                <span className="text-emerald-600 font-bold">•</span>
+                                <span className="line-clamp-1">{pt}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-[#f0eee6]">
+                      <span className="text-[10px] text-[#5b605b] font-mono">Icon: {item.icon_name || 'Wrench'}</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setEditingInstallationService(item)}
+                          className="text-xs font-semibold text-[#9a6f0c] hover:underline cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInstallationServiceClick(item.id)}
+                          className="text-xs font-semibold text-red-600 hover:underline cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 2. PROCESS STEPS SUB-TAB */}
+          {activeInstallationSubTab === 'steps' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-[#1f2220] font-serif">Structured Workflow Stages</h3>
+                  <p className="text-xs text-[#5b605b]">Displayed in the 6-stage workflow timeline on the installation services page.</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setEditingProcessStep({
+                      step: installationProcessSteps.length + 1,
+                      name: '',
+                      desc: '',
+                      sort_order: installationProcessSteps.length + 1,
+                    })
+                  }
+                  className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Process Stage</span>
+                </button>
+              </div>
+
+              {editingProcessStep && (
+                <form onSubmit={handleSaveProcessStepSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
+                  <h4 className="text-lg font-bold text-[#1f2220] font-serif">
+                    {editingProcessStep.id ? 'Edit Process Stage' : 'New Process Stage'}
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Stage Number (e.g. 1, 2, 3) *</label>
+                      <input
+                        type="number"
+                        required
+                        value={editingProcessStep.step ?? 1}
+                        onChange={(e) => setEditingProcessStep({ ...editingProcessStep, step: parseInt(e.target.value) || 1 })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Stage Name *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Enquiry, Site Assessment, Quotation"
+                        value={editingProcessStep.name || ''}
+                        onChange={(e) => setEditingProcessStep({ ...editingProcessStep, name: e.target.value })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#1f2220] mb-1">Sort Order</label>
+                      <input
+                        type="number"
+                        value={editingProcessStep.sort_order ?? 1}
+                        onChange={(e) => setEditingProcessStep({ ...editingProcessStep, sort_order: parseInt(e.target.value) || 1 })}
+                        className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Stage Description *</label>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="What happens during this stage..."
+                      value={editingProcessStep.desc || ''}
+                      onChange={(e) => setEditingProcessStep({ ...editingProcessStep, desc: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingProcessStep(null)}
+                      className="px-4 py-2 rounded-md border border-[#c9c7bd] text-xs text-[#5b605b]"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs cursor-pointer">
+                      Save Process Stage
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {installationProcessSteps.map((step) => (
+                  <div key={step.id} className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-2 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 h-7 rounded-full bg-[#E4B241]/20 text-[#9a6f0c] font-bold text-xs flex items-center justify-center font-serif">
+                            {step.step}
+                          </span>
+                          <h4 className="font-bold text-sm font-serif text-[#1f2220]">{step.name}</h4>
+                        </div>
+                        <span className="text-[10px] text-[#9a6f0c] font-mono">Stage 0{step.step}</span>
+                      </div>
+                      <p className="text-xs text-[#5b605b] mt-2 leading-relaxed">{step.desc}</p>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#f0eee6]">
+                      <button onClick={() => setEditingProcessStep(step)} className="text-xs font-semibold text-[#9a6f0c] hover:underline cursor-pointer">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteProcessStepClick(step.id)} className="text-xs font-semibold text-red-600 hover:underline cursor-pointer">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3. PAGE HEADERS & COVERAGE SETTINGS SUB-TAB */}
+          {activeInstallationSubTab === 'settings' && (
+            <form onSubmit={handleSaveInstallationSettingsSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-6">
+              <div>
+                <h3 className="font-bold text-base text-[#1f2220] font-serif">Installation Page Headings & District Coverage</h3>
+                <p className="text-xs text-[#5b605b]">Customize hero texts, section badges, and district coverage callout box.</p>
+              </div>
+
+              {/* Hero Section Texts */}
+              <div className="p-4 rounded-md bg-[#fcfbf7] border border-[#e5e3db] space-y-3">
+                <span className="block text-xs font-bold text-[#9a6f0c] uppercase tracking-wider font-serif">1. Hero Section</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Hero Pill Badge</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.hero_badge || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, hero_badge: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Hero Title *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingInstallationSettings.hero_title || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, hero_title: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Hero Subtitle</label>
+                  <textarea
+                    rows={2}
+                    value={editingInstallationSettings.hero_subtitle || ''}
+                    onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, hero_subtitle: e.target.value })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Primary CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.hero_cta_text || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, hero_cta_text: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">WhatsApp Button Text</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.hero_whatsapp_text || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, hero_whatsapp_text: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Services Section Headers */}
+              <div className="p-4 rounded-md bg-[#fcfbf7] border border-[#e5e3db] space-y-3">
+                <span className="block text-xs font-bold text-[#9a6f0c] uppercase tracking-wider font-serif">2. Services Grid Section</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Section Badge</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.services_section_badge || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, services_section_badge: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.services_section_title || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, services_section_title: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Section Description</label>
+                  <input
+                    type="text"
+                    value={editingInstallationSettings.services_section_desc || ''}
+                    onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, services_section_desc: e.target.value })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+              </div>
+
+              {/* District Coverage Callout Box */}
+              <div className="p-4 rounded-md bg-[#fcfbf7] border border-[#e5e3db] space-y-3">
+                <span className="block text-xs font-bold text-[#9a6f0c] uppercase tracking-wider font-serif">3. District Coverage Banner</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Coverage Badge</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.coverage_badge || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, coverage_badge: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Coverage Heading</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.coverage_title || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, coverage_title: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Coverage Description</label>
+                  <textarea
+                    rows={2}
+                    value={editingInstallationSettings.coverage_desc || ''}
+                    onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, coverage_desc: e.target.value })}
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Coverage CTA Button Text</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.coverage_cta_text || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, coverage_cta_text: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Pre-filled WhatsApp Message</label>
+                    <input
+                      type="text"
+                      value={editingInstallationSettings.coverage_whatsapp_text || ''}
+                      onChange={(e) => setEditingInstallationSettings({ ...editingInstallationSettings, coverage_whatsapp_text: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-6 py-2.5 rounded-md text-xs cursor-pointer shadow-xs transition-colors"
+                >
+                  Save Installation Page Settings
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       )}
 

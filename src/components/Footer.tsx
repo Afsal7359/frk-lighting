@@ -81,7 +81,7 @@ export default function Footer({ settings }: FooterProps) {
                   {settings.phone}
                 </a>
               </p>
-              <p className="m-0 text-slate-300">WhatsApp: same number</p>
+              {/* <p className="m-0 text-slate-300">WhatsApp: same number</p> */}
               <p className="m-0 pt-1">
                 <a
                   href={settings.instagram}

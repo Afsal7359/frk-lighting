@@ -1,4 +1,4 @@
-import { Blog, Product, ProductSpecs, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog, InstallationStory, CustomerTestimonial } from './types';
+import { Blog, Product, ProductSpecs, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog, InstallationStory, CustomerTestimonial, InstallationServiceItem, InstallationProcessStep, InstallationPageSettings } from './types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
@@ -705,6 +705,127 @@ export const INITIAL_TESTIMONIALS: CustomerTestimonial[] = [
   }
 ];
 
+export const INITIAL_INSTALLATION_PAGE_SETTINGS: InstallationPageSettings = {
+  hero_badge: 'Installation Services',
+  hero_title: 'Installed Right, the First Time',
+  hero_subtitle: 'FRK provides complete solar lighting installation across Kerala — from the first site visit to long term support.',
+  hero_cta_text: 'Book a Free Site Assessment',
+  hero_whatsapp_text: 'WhatsApp Inquiry',
+  services_section_badge: 'Comprehensive Turnkey Execution',
+  services_section_title: 'Our Complete Installation Services',
+  services_section_desc: 'Every solar installation in Kerala requires proper civil engineering, shade calculations, and waterproof electrical standards.',
+  process_section_badge: 'Structured 6-Stage Workflow',
+  process_section_title: 'Our Process',
+  process_section_desc: 'From your initial enquiry to long-term post-installation care, here is how we work with you.',
+  coverage_badge: 'DISTRICT COVERAGE',
+  coverage_title: 'We currently serve sites across Kerala.',
+  coverage_desc: 'Contact us to confirm coverage in your district. We handle projects in Kozhikode, Malappuram, Ernakulam, Thrissur, Kannur, Wayanad, Kottayam, and across all 14 districts.',
+  coverage_cta_text: 'START YOUR ENQUIRY',
+  coverage_whatsapp_text: 'Hello FRK Lighting, I would like to confirm solar installation coverage for my district.'
+};
+
+export const INITIAL_INSTALLATION_SERVICES: InstallationServiceItem[] = [
+  {
+    id: 'inst-serv-1',
+    num: '01',
+    title: 'Site Assessment',
+    badge: 'Step 1 • On-Site Survey',
+    summary: 'Our team visits your location to evaluate sunlight exposure, mounting options, and coverage requirements.',
+    image: '/images/frk14.jpg',
+    icon_name: 'MapPin',
+    points: [
+      'Sunlight hours & shadow analysis (trees, nearby buildings, palms)',
+      'Road/area dimensions, road width, and optimal pole spacing calculation',
+      'Ground & soil evaluation for concrete foundation depth & anchor bolts'
+    ],
+    sort_order: 1
+  },
+  {
+    id: 'inst-serv-2',
+    num: '02',
+    title: 'Product Recommendation',
+    badge: 'Step 2 • Engineering Sizing',
+    summary: 'Selecting the exact fixture type, lumen output, panel wattage, and battery autonomy tailored to your site.',
+    image: '/images/frk16.jpg',
+    icon_name: 'Compass',
+    points: [
+      'Choice between integrated All-in-One vs high-capacity Split-Type systems',
+      'LiFePO4 battery sizing to ensure 2+ days uninterrupted monsoon autonomy',
+      'Optic beam angle (120° wide road distribution) and lux level calculations'
+    ],
+    sort_order: 2
+  },
+  {
+    id: 'inst-serv-3',
+    num: '03',
+    title: 'Quotation Preparation',
+    badge: 'Step 3 • Transparent Pricing',
+    summary: 'Comprehensive, all-inclusive proposal with zero hidden charges or surprise costs.',
+    image: '/images/frk8.jpg',
+    icon_name: 'FileCheck',
+    points: [
+      'Clear itemized breakdown: Luminaires, solar panels, batteries, and controllers',
+      'Galvanized iron (GI) poles (5m-6m), mounting brackets, and anchor kits',
+      'Civil foundation works, logistics delivery across Kerala, and labor included'
+    ],
+    sort_order: 3
+  },
+  {
+    id: 'inst-serv-4',
+    num: '04',
+    title: 'Installation Planning',
+    badge: 'Step 4 • Project Logistics',
+    summary: 'Civil foundation curing, delivery schedules, and coordination with site authorities.',
+    image: '/images/frk7.jpg',
+    icon_name: 'CalendarCheck',
+    points: [
+      'Excavation and civil foundation casting with high-grade concrete mix',
+      '5 to 7-day curing period to withstand high tropical wind loads',
+      'Pre-assembly testing of solar panels, controllers, and LED modules'
+    ],
+    sort_order: 4
+  },
+  {
+    id: 'inst-serv-5',
+    num: '05',
+    title: 'Professional Installation',
+    badge: 'Step 5 • Precision Erection',
+    summary: 'Experienced technician team erects poles, mounts luminaires, and calibrates solar orientation.',
+    image: '/images/frk15.jpg',
+    icon_name: 'Wrench',
+    points: [
+      'True-south solar panel orientation for maximum daily photovoltaic yield',
+      'Secure pole flange mounting with high-tensile galvanized anchor bolts',
+      'Dusk-to-dawn sensor calibration and intelligent remote control testing'
+    ],
+    sort_order: 5
+  },
+  {
+    id: 'inst-serv-6',
+    num: '06',
+    title: 'After-Sales Support',
+    badge: 'Step 6 • Long-Term Care',
+    summary: 'Dedicated Kerala-based technical service, warranty backing, and annual maintenance advice.',
+    image: '/images/frk12.jpg',
+    icon_name: 'Headphones',
+    points: [
+      'Comprehensive warranty on luminaires, LiFePO4 batteries, and solar panels',
+      'Direct phone and WhatsApp technical assistance team located in Kerala',
+      'Periodic preventative maintenance advice and prompt replacement support'
+    ],
+    sort_order: 6
+  }
+];
+
+export const INITIAL_INSTALLATION_PROCESS_STEPS: InstallationProcessStep[] = [
+  { id: 'step-1', step: 1, name: 'Enquiry', desc: 'Reach out via phone, WhatsApp, or web form with basic location details.', sort_order: 1 },
+  { id: 'step-2', step: 2, name: 'Site Assessment', desc: 'Our technicians survey sun paths, shadows, soil, and pole positions.', sort_order: 2 },
+  { id: 'step-3', step: 3, name: 'Quotation', desc: 'Receive a customized, all-inclusive proposal with technical sizing.', sort_order: 3 },
+  { id: 'step-4', step: 4, name: 'Confirmation', desc: 'Approve proposal, confirm pole specifications, and schedule dates.', sort_order: 4 },
+  { id: 'step-5', step: 5, name: 'Installation', desc: 'Civil foundation, pole erection, mounting, and commissioning.', sort_order: 5 },
+  { id: 'step-6', step: 6, name: 'Support', desc: 'Ongoing technical service, warranty care, and long-term reliability.', sort_order: 6 }
+];
+
 let memoryBlogs = [...INITIAL_BLOGS];
 let memoryProducts = [...INITIAL_PRODUCTS];
 let memoryApplications = [...INITIAL_APPLICATIONS];
@@ -713,6 +834,9 @@ let memoryTestimonials = [...INITIAL_TESTIMONIALS];
 let memorySettings = { ...INITIAL_SITE_SETTINGS };
 let memoryInquiries = [...INITIAL_INQUIRIES];
 let memoryKeepAliveLogs = [...INITIAL_KEEPALIVE_LOGS];
+let memoryInstallationPageSettings = { ...INITIAL_INSTALLATION_PAGE_SETTINGS };
+let memoryInstallationServices = [...INITIAL_INSTALLATION_SERVICES];
+let memoryInstallationProcessSteps = [...INITIAL_INSTALLATION_PROCESS_STEPS];
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   if (isSupabaseConfigured && supabase) {
@@ -1483,5 +1607,190 @@ export async function checkDatabaseSchema(): Promise<{
     tables: results,
     missingTables: missing
   };
+}
+
+// --- INSTALLATION PAGE & SERVICES MANAGEMENT ---
+
+export async function getInstallationPageSettings(): Promise<InstallationPageSettings> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('site_settings').select('*').eq('key', 'installation_page_settings').single();
+      if (!error && data && data.value) {
+        return { ...INITIAL_INSTALLATION_PAGE_SETTINGS, ...data.value };
+      }
+    } catch (e) {
+      console.warn("Supabase fetch installation_page_settings failed, using fallback:", e);
+    }
+  }
+  return memoryInstallationPageSettings;
+}
+
+export async function updateInstallationPageSettings(newSettings: Partial<InstallationPageSettings>): Promise<InstallationPageSettings> {
+  memoryInstallationPageSettings = { ...memoryInstallationPageSettings, ...newSettings };
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'installation_page_settings',
+        value: memoryInstallationPageSettings,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      if (error) {
+        console.error("Supabase installation_page_settings update error:", error);
+      }
+    } catch (e) {
+      console.error("Supabase installation_page_settings update exception:", e);
+    }
+  }
+  return memoryInstallationPageSettings;
+}
+
+export async function getInstallationServices(): Promise<InstallationServiceItem[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('site_settings').select('*').eq('key', 'installation_services').single();
+      if (!error && data && Array.isArray(data.value) && data.value.length > 0) {
+        return (data.value as InstallationServiceItem[]).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      }
+    } catch (e) {
+      console.warn("Supabase fetch installation_services failed, using fallback:", e);
+    }
+  }
+  return [...memoryInstallationServices].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+}
+
+export async function saveInstallationService(item: Partial<InstallationServiceItem>): Promise<InstallationServiceItem> {
+  const current = await getInstallationServices();
+  const id = item.id || `inst-serv-${Date.now()}`;
+  const updatedItem: InstallationServiceItem = {
+    id,
+    num: item.num || String(current.length + 1).padStart(2, '0'),
+    title: item.title || 'New Installation Service',
+    badge: item.badge || 'Service Step',
+    summary: item.summary || '',
+    points: Array.isArray(item.points) ? item.points : [],
+    image: item.image || '/images/frk14.jpg',
+    icon_name: item.icon_name || 'Wrench',
+    sort_order: item.sort_order ?? (current.length + 1)
+  };
+
+  const exists = current.some((s) => s.id === id);
+  const updatedList = exists
+    ? current.map((s) => (s.id === id ? updatedItem : s))
+    : [...current, updatedItem];
+
+  memoryInstallationServices = updatedList;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'installation_services',
+        value: updatedList,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      if (error) {
+        console.error("Supabase installation_services save error:", error);
+      }
+    } catch (e) {
+      console.error("Supabase installation_services save exception:", e);
+    }
+  }
+
+  return updatedItem;
+}
+
+export async function deleteInstallationService(id: string): Promise<boolean> {
+  const current = await getInstallationServices();
+  const updatedList = current.filter((s) => s.id !== id);
+  memoryInstallationServices = updatedList;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'installation_services',
+        value: updatedList,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      if (error) {
+        console.error("Supabase installation_services delete error:", error);
+      }
+    } catch (e) {
+      console.error("Supabase installation_services delete exception:", e);
+    }
+  }
+  return true;
+}
+
+export async function getInstallationProcessSteps(): Promise<InstallationProcessStep[]> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('site_settings').select('*').eq('key', 'installation_process_steps').single();
+      if (!error && data && Array.isArray(data.value) && data.value.length > 0) {
+        return (data.value as InstallationProcessStep[]).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      }
+    } catch (e) {
+      console.warn("Supabase fetch installation_process_steps failed, using fallback:", e);
+    }
+  }
+  return [...memoryInstallationProcessSteps].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+}
+
+export async function saveInstallationProcessStep(step: Partial<InstallationProcessStep>): Promise<InstallationProcessStep> {
+  const current = await getInstallationProcessSteps();
+  const id = step.id || `step-${Date.now()}`;
+  const stepNum = step.step ?? (current.length + 1);
+
+  const updatedStep: InstallationProcessStep = {
+    id,
+    step: stepNum,
+    name: step.name || `Stage 0${stepNum}`,
+    desc: step.desc || '',
+    sort_order: step.sort_order ?? stepNum
+  };
+
+  const exists = current.some((s) => s.id === id);
+  const updatedList = exists
+    ? current.map((s) => (s.id === id ? updatedStep : s))
+    : [...current, updatedStep];
+
+  memoryInstallationProcessSteps = updatedList;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'installation_process_steps',
+        value: updatedList,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      if (error) {
+        console.error("Supabase installation_process_steps save error:", error);
+      }
+    } catch (e) {
+      console.error("Supabase installation_process_steps save exception:", e);
+    }
+  }
+
+  return updatedStep;
+}
+
+export async function deleteInstallationProcessStep(id: string): Promise<boolean> {
+  const current = await getInstallationProcessSteps();
+  const updatedList = current.filter((s) => s.id !== id);
+  memoryInstallationProcessSteps = updatedList;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'installation_process_steps',
+        value: updatedList,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+      if (error) {
+        console.error("Supabase installation_process_steps delete error:", error);
+      }
+    } catch (e) {
+      console.error("Supabase installation_process_steps delete exception:", e);
+    }
+  }
+  return true;
 }
 
