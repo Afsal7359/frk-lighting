@@ -68,7 +68,13 @@ export interface Product {
   image_url?: string;
   fixture_image_url?: string;
   lifestyle_image_url?: string;
-  specs?: ProductSpecs;
+  images?: string[];
+  lifestyle_images?: string[];
+  specs?: ProductSpecs & {
+    images?: string[];
+    main_image?: string;
+    lifestyle_images?: string[];
+  };
   is_active: boolean;
   sort_order: number;
   created_at?: string;
@@ -141,4 +147,43 @@ export interface CustomerTestimonial {
   avatar_url?: string;
   sort_order: number;
   created_at?: string;
+}
+
+export interface InstallationServiceItem {
+  id: string;
+  num: string;
+  title: string;
+  badge: string;
+  summary: string;
+  points: string[];
+  image: string;
+  icon_name?: string;
+  sort_order: number;
+}
+
+export interface InstallationProcessStep {
+  id: string;
+  step: number;
+  name: string;
+  desc: string;
+  sort_order: number;
+}
+
+export interface InstallationPageSettings {
+  hero_badge: string;
+  hero_title: string;
+  hero_subtitle: string;
+  hero_cta_text: string;
+  hero_whatsapp_text: string;
+  services_section_badge: string;
+  services_section_title: string;
+  services_section_desc: string;
+  process_section_badge: string;
+  process_section_title: string;
+  process_section_desc: string;
+  coverage_badge: string;
+  coverage_title: string;
+  coverage_desc: string;
+  coverage_cta_text: string;
+  coverage_whatsapp_text: string;
 }

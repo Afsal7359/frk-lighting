@@ -4,6 +4,9 @@ import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import { getSiteSettings, getProducts, getApplications, getBlogs } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage() {
   const settings = await getSiteSettings();
   const products = await getProducts();
@@ -74,14 +77,14 @@ export default async function HomePage() {
             </div>
 
             <div className="lg:col-span-5">
-              <div className="relative rounded-lg overflow-hidden bg-[#f6f4ee] aspect-[4/5] border border-[#e4e2da]">
+              <div className="relative rounded-2xl overflow-hidden bg-[#0d0f18] aspect-[4/3] border border-[#2a2d3d] shadow-xl group">
                 <Image
-                  src="/images/frk1.webp"
-                  alt="Solar street light on a pole at dusk"
+                  src={settings.hero_image_url || "/images/frk-hero-products.jpg"}
+                  alt="FRK Solar Street Lights and Lighting Solutions Lineup"
                   fill
                   sizes="(max-width: 1024px) 100vw, 45vw"
                   priority
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
                   unoptimized
                 />
               </div>

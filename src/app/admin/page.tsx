@@ -26,7 +26,11 @@ import {
   Check,
   ExternalLink,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  Eye
 } from 'lucide-react';
 import {
   Blog,
@@ -101,6 +105,8 @@ CREATE TABLE IF NOT EXISTS testimonials (
 ALTER TABLE products ADD COLUMN IF NOT EXISTS fixture_image_url TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS lifestyle_image_url TEXT;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS specs JSONB;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images TEXT[];
+ALTER TABLE products ADD COLUMN IF NOT EXISTS lifestyle_images TEXT[];
 ALTER TABLE blogs ADD COLUMN IF NOT EXISTS prev_blog_id TEXT;
 ALTER TABLE blogs ADD COLUMN IF NOT EXISTS next_blog_id TEXT;
 ALTER TABLE blogs ADD COLUMN IF NOT EXISTS related_blog_ids TEXT[];
@@ -180,6 +186,8 @@ export default function AdminDashboardPage() {
   // Editing States
   const [editingBlog, setEditingBlog] = useState<Partial<Blog> | null>(null);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [productUrlInput, setProductUrlInput] = useState('');
+  const [lifestyleUrlInput, setLifestyleUrlInput] = useState('');
   const [editingApplication, setEditingApplication] = useState<Partial<ApplicationItem> | null>(null);
   const [editingStory, setEditingStory] = useState<Partial<InstallationStory> | null>(null);
   const [editingTestimonial, setEditingTestimonial] = useState<Partial<CustomerTestimonial> | null>(null);
@@ -352,6 +360,159 @@ export default function AdminDashboardPage() {
         showMsg(`Failed to delete product: ${err?.message || err}`, 'error');
       }
     }
+  };
+
+  const handleStartEditProduct = (p: Product) => {
+    const productImages =
+      p.images && p.images.length > 0
+        ? [...p.images]
+        : (p.specs as any)?.images && (p.specs as any).images.length > 0
+          ? [...(p.specs as any).images]
+          : [p.fixture_image_url || p.image_url].filter(Boolean) as string[];
+
+    const mainImg = p.fixture_image_url || p.image_url || productImages[0] || '';
+    if (mainImg && !productImages.includes(mainImg)) {
+      productImages.unshift(mainImg);
+    }
+
+    setEditingProduct({
+      ...p,
+      images: productImages,
+      fixture_image_url: mainImg,
+      image_url: mainImg,
+      lifestyle_image_url: p.lifestyle_image_url || ''
+    });
+    setProductUrlInput('');
+    setLifestyleUrlInput('');
+  };
+
+  const handleMultipleProductFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+
+    setUploadingImage(true);
+    showMsg(`Uploading ${fileArray.length} product image(s) to ImageKit CDN...`, 'success');
+
+    const newUrls: string[] = [];
+
+    for (const file of fileArray) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          newUrls.push(data.url);
+        } else {
+          await new Promise<void>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (reader.result) newUrls.push(reader.result as string);
+              resolve();
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
+
+    setEditingProduct((prev) => {
+      if (!prev) return null;
+      const existing = prev.images || [];
+      const combined = [...existing, ...newUrls];
+      const main = prev.fixture_image_url || prev.image_url || combined[0] || '';
+      return {
+        ...prev,
+        images: combined,
+        fixture_image_url: main,
+        image_url: main
+      };
+    });
+
+    setUploadingImage(false);
+    showMsg(`Uploaded ${newUrls.length} product image(s) successfully!`, 'success');
+  };
+
+  const handleAddProductImageUrl = () => {
+    if (!productUrlInput.trim()) return;
+    const url = productUrlInput.trim();
+    setEditingProduct((prev) => {
+      if (!prev) return null;
+      const existing = prev.images || [];
+      if (existing.includes(url)) return prev;
+      const combined = [...existing, url];
+      const main = prev.fixture_image_url || prev.image_url || combined[0] || '';
+      return {
+        ...prev,
+        images: combined,
+        fixture_image_url: main,
+        image_url: main
+      };
+    });
+    setProductUrlInput('');
+    showMsg('Image URL added to product photos.');
+  };
+
+  const handleSetMainProductImage = (imgUrl: string) => {
+    setEditingProduct((prev) => {
+      if (!prev) return null;
+      const currentImages = prev.images || [];
+      const reordered = [imgUrl, ...currentImages.filter((u) => u !== imgUrl)];
+      return {
+        ...prev,
+        fixture_image_url: imgUrl,
+        image_url: imgUrl,
+        images: reordered
+      };
+    });
+    showMsg('Set as primary cover image!');
+  };
+
+  const handleRemoveProductImage = (imgUrl: string) => {
+    setEditingProduct((prev) => {
+      if (!prev) return null;
+      const remaining = (prev.images || []).filter((u) => u !== imgUrl);
+      const isMain = prev.fixture_image_url === imgUrl || prev.image_url === imgUrl;
+      const nextMain = isMain ? (remaining[0] || '') : (prev.fixture_image_url || '');
+      return {
+        ...prev,
+        images: remaining,
+        fixture_image_url: nextMain,
+        image_url: nextMain
+      };
+    });
+  };
+
+  const handleMoveProductImage = (index: number, direction: 'left' | 'right') => {
+    setEditingProduct((prev) => {
+      if (!prev || !prev.images) return prev;
+      const images = [...prev.images];
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= images.length) return prev;
+      const temp = images[index];
+      images[index] = images[targetIndex];
+      images[targetIndex] = temp;
+      return { ...prev, images };
+    });
+  };
+
+  const handleUploadLifestyleFile = async (file: File) => {
+    handleFileUpload(file, (url) => {
+      setEditingProduct((prev) => (prev ? { ...prev, lifestyle_image_url: url } : null));
+    });
+  };
+
+  const handleAddLifestyleUrl = () => {
+    if (!lifestyleUrlInput.trim()) return;
+    const url = lifestyleUrlInput.trim();
+    setEditingProduct((prev) => (prev ? { ...prev, lifestyle_image_url: url } : null));
+    setLifestyleUrlInput('');
+    showMsg('On-site installation photo URL saved.');
   };
 
   const handleSaveApplicationSubmit = async (e: React.FormEvent) => {
@@ -1075,121 +1236,557 @@ export default function AdminDashboardPage() {
       {activeTab === 'products' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-serif text-[#1f2220]">Manage Products & Images</h2>
+            <div>
+              <h2 className="text-xl font-bold font-serif text-[#1f2220]">Manage Products & Images</h2>
+              <p className="text-xs text-[#7d827d] mt-0.5">
+                Manage catalog specs, multiple product fixture photos, and real on-site installation photos.
+              </p>
+            </div>
             <button
-              onClick={() => setEditingProduct({ name: '', category: 'All-in-one' })}
-              className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer"
+              onClick={() => {
+                setEditingProduct({
+                  name: '',
+                  category: 'All-in-one',
+                  wattage_range: '',
+                  subtitle: '',
+                  description: '',
+                  best_for: '',
+                  why_choose: '',
+                  keep_in_mind: '',
+                  images: [],
+                  fixture_image_url: '',
+                  image_url: '',
+                  lifestyle_image_url: '',
+                  is_active: true
+                });
+                setProductUrlInput('');
+                setLifestyleUrlInput('');
+              }}
+              className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-4 py-2 rounded-md text-xs flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Product</span>
+              <span>Add New Product</span>
             </button>
           </div>
 
           {editingProduct && (
-            <form onSubmit={handleSaveProductSubmit} className="bg-white p-6 rounded-lg border border-[#e4e2da] space-y-4">
-              <h3 className="text-lg font-bold text-[#1f2220] font-serif">
-                {editingProduct.id ? 'Edit Product' : 'Add New Product'}
-              </h3>
+            <form onSubmit={handleSaveProductSubmit} className="bg-white p-6 rounded-xl border border-[#e4e2da] shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-[#e4e2da] pb-3">
+                <h3 className="text-lg font-bold text-[#1f2220] font-serif flex items-center gap-2">
+                  <Package className="w-5 h-5 text-[#9a6f0c]" />
+                  <span>{editingProduct.id ? `Edit: ${editingProduct.name || 'Product'}` : 'Add New Solar Product'}</span>
+                </h3>
+                <span className="text-xs font-semibold text-[#7d827d]">
+                  {editingProduct.slug ? `Code: ${editingProduct.slug.toUpperCase()}` : 'New Entry'}
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* SECTION 1: BASIC INFORMATION */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-[#1f2220] uppercase tracking-wider font-serif">
+                  1. Basic Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Product Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingProduct.name || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                      placeholder="e.g. Solar Streetlight 600W-S1"
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] focus:ring-1 focus:ring-[#E4B241]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Category *</label>
+                    <select
+                      value={editingProduct.category || 'All-in-one'}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] focus:ring-1 focus:ring-[#E4B241]"
+                    >
+                      <option>All-in-one</option>
+                      <option>Split-type</option>
+                      <option>Commercial</option>
+                      <option>Architectural & Landscape</option>
+                      <option>Heavy-Duty Commercial</option>
+                      <option>Municipal & Highway Grade</option>
+                      <option>Flood Light</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Wattage & Panel Rating</label>
+                    <input
+                      type="text"
+                      value={editingProduct.wattage_range || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, wattage_range: e.target.value })}
+                      placeholder="e.g. 600W (60W Solar Panel)"
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] focus:ring-1 focus:ring-[#E4B241]"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Product Name *</label>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Subtitle / Headline</label>
                   <input
                     type="text"
-                    required
-                    value={editingProduct.name || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    value={editingProduct.subtitle || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, subtitle: e.target.value })}
+                    placeholder="e.g. Compact All-In-One Dusk-To-Dawn Solar Street Light"
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] focus:ring-1 focus:ring-[#E4B241]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Category</label>
-                  <select
-                    value={editingProduct.category || 'All-in-one'}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
-                  >
-                    <option>All-in-one</option>
-                    <option>Split-type</option>
-                    <option>Flood Light</option>
-                    <option>Landscape</option>
-                  </select>
+                  <label className="block text-xs font-semibold text-[#1f2220] mb-1">Detailed Description</label>
+                  <textarea
+                    rows={3}
+                    value={editingProduct.description || ''}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    placeholder="Describe housing material, IP ingress rating, solar cell efficiency, battery chemistry, and suitability..."
+                    className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220] focus:ring-1 focus:ring-[#E4B241]"
+                  />
                 </div>
               </div>
 
-              {/* Product Image Upload */}
-              <div className="bg-[#f6f4ee] p-4 rounded-md border border-[#e4e2da] space-y-2">
-                <span className="block text-xs font-bold text-[#1f2220] font-serif">Product Image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={uploadingImage}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      handleFileUpload(file, (url) => {
-                        setEditingProduct((prev: Partial<Product> | null) => (prev ? { ...prev, image_url: url } : null));
-                      });
-                    }
-                  }}
-                  className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#E4B241] file:text-[#1f2220] cursor-pointer"
-                />
-                {editingProduct.image_url && (
-                  <div className="pt-2 flex items-center gap-3">
-                    <img src={editingProduct.image_url} alt="Product Preview" className="w-16 h-12 object-cover rounded border" />
+              {/* SECTION 2: SET 1 - PRODUCT FIXTURE IMAGES (MULTIPLE IMAGES + MAIN CHOOSE) */}
+              <div className="bg-[#fbf9f4] p-5 rounded-xl border border-[#e4e2da] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e4e2da] pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-[#9a6f0c]" />
+                      <h4 className="text-sm font-bold text-[#1f2220] font-serif">
+                        Set 1: Product Fixture Photos (Multiple Image Support)
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-[#5b605b] mt-0.5">
+                      Upload multiple angles, close-ups, and catalog views. Click <strong className="text-[#9a6f0c]">Set as Main</strong> to select the primary cover photo for website product cards.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold px-2.5 py-1 rounded bg-[#1f2220] text-white shrink-0 self-start sm:self-center">
+                    {editingProduct.images?.length || 0} Photos Added
+                  </span>
+                </div>
+
+                {/* Upload & Add URL Controls */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-white p-3 rounded-lg border border-[#e4e2da] space-y-1.5">
+                    <label className="block text-xs font-semibold text-[#1f2220]">
+                      Upload Multiple Image Files (to ImageKit CDN)
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      disabled={uploadingImage}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleMultipleProductFiles(e.target.files);
+                        }
+                      }}
+                      className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#E4B241] file:text-[#1f2220] cursor-pointer"
+                    />
+                    <span className="block text-[10px] text-[#7d827d]">
+                      Tip: You can select multiple files at once.
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-lg border border-[#e4e2da] space-y-1.5">
+                    <label className="block text-xs font-semibold text-[#1f2220]">
+                      Or Add by Direct Image URL / Path
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={productUrlInput}
+                        onChange={(e) => setProductUrlInput(e.target.value)}
+                        placeholder="https://... or /images/products/..."
+                        className="flex-1 bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddProductImageUrl}
+                        className="bg-[#1f2220] text-white font-semibold px-3 py-1.5 rounded-md text-xs hover:bg-black transition-colors shrink-0"
+                      >
+                        + Add Photo
+                      </button>
+                    </div>
+                    <span className="block text-[10px] text-[#7d827d]">
+                      Works with ImageKit URLs, Supabase Storage, or local public paths.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Multi-Image Gallery Grid */}
+                {editingProduct.images && editingProduct.images.length > 0 ? (
+                  <div className="space-y-2 pt-2">
+                    <span className="block text-xs font-bold text-[#1f2220]">
+                      Current Product Photos & Main Cover Selection:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {editingProduct.images.map((imgUrl, index) => {
+                        const isMain =
+                          imgUrl === editingProduct.fixture_image_url ||
+                          (!editingProduct.fixture_image_url && index === 0);
+
+                        return (
+                          <div
+                            key={`edit-img-${imgUrl}-${index}`}
+                            className={`relative rounded-xl overflow-hidden bg-white border-2 p-2 flex flex-col justify-between transition-all ${
+                              isMain
+                                ? 'border-[#E4B241] ring-2 ring-[#E4B241]/40 shadow-sm'
+                                : 'border-[#e4e2da]'
+                            }`}
+                          >
+                            {/* Thumbnail view */}
+                            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-[#fcfbf7] border border-[#e8e6df] mb-2">
+                              <img
+                                src={imgUrl}
+                                alt={`Product view ${index + 1}`}
+                                className="w-full h-full object-contain p-1"
+                              />
+                              {isMain && (
+                                <span className="absolute top-1 left-1 bg-[#E4B241] text-[#1f2220] text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                                  <Star className="w-2.5 h-2.5 fill-[#1f2220]" />
+                                  MAIN
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="space-y-1.5">
+                              {!isMain ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetMainProductImage(imgUrl)}
+                                  className="w-full bg-[#f6f4ee] hover:bg-[#E4B241] hover:text-[#1f2220] text-[#5b605b] font-semibold text-[11px] py-1 rounded transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                                >
+                                  <Star className="w-3 h-3 text-amber-500" />
+                                  <span>Set as Main</span>
+                                </button>
+                              ) : (
+                                <div className="w-full bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px] py-1 rounded text-center">
+                                  ✓ Primary Cover
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between pt-1 border-t border-[#e8e6df] text-xs">
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={index === 0}
+                                    onClick={() => handleMoveProductImage(index, 'left')}
+                                    className="p-1 text-[#5b605b] hover:text-[#1f2220] disabled:opacity-30 cursor-pointer"
+                                    title="Move left"
+                                  >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={index === (editingProduct.images?.length || 0) - 1}
+                                    onClick={() => handleMoveProductImage(index, 'right')}
+                                    className="p-1 text-[#5b605b] hover:text-[#1f2220] disabled:opacity-30 cursor-pointer"
+                                    title="Move right"
+                                  >
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveProductImage(imgUrl)}
+                                  className="text-red-600 hover:text-red-800 p-1 cursor-pointer"
+                                  title="Remove image"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white p-6 rounded-lg border border-dashed border-[#c9c7bd] text-center">
+                    <ImageIcon className="w-8 h-8 text-[#a3a19b] mx-auto mb-2" />
+                    <p className="text-xs text-[#5b605b] font-medium">
+                      No product fixture photos added yet.
+                    </p>
+                    <p className="text-[11px] text-[#7d827d] mt-0.5">
+                      Upload your first image above to set it as the primary cover photo.
+                    </p>
                   </div>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#1f2220] mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={editingProduct.description || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
-                />
+              {/* SECTION 3: SET 2 - PRODUCT ON SITE (REAL-WORLD KERALA INSTALLATION PHOTO) */}
+              <div className="bg-[#f4f7f5] p-5 rounded-xl border border-[#d6e3da] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#d6e3da] pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <h4 className="text-sm font-bold text-[#1f2220] font-serif">
+                        Set 2: Product on Site (Real Kerala Installation Photo)
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-[#5b605b] mt-0.5">
+                      Upload an actual photo of this light installed on a pole in Kerala. Displayed prominently in the product overview and detail page under &quot;Actual On-Site Kerala Installation Photo&quot;.
+                    </p>
+                  </div>
+                  {editingProduct.lifestyle_image_url && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-600 text-white shrink-0 self-start sm:self-center">
+                      On-Site Photo Active
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                  <div className="space-y-3">
+                    <div className="bg-white p-3 rounded-lg border border-[#d6e3da] space-y-1.5">
+                      <label className="block text-xs font-semibold text-[#1f2220]">
+                        Upload Installation Photo (to ImageKit CDN)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUploadLifestyleFile(file);
+                        }}
+                        className="w-full text-xs text-[#1f2220] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-[#d6e3da] space-y-1.5">
+                      <label className="block text-xs font-semibold text-[#1f2220]">
+                        Or Paste On-Site Image URL
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={lifestyleUrlInput}
+                          onChange={(e) => setLifestyleUrlInput(e.target.value)}
+                          placeholder="https://... or /images/products/...-install.webp"
+                          className="flex-1 bg-white border border-[#c9c7bd] rounded-md px-3 py-1.5 text-xs text-[#1f2220]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddLifestyleUrl}
+                          className="bg-emerald-700 text-white font-semibold px-3 py-1.5 rounded-md text-xs hover:bg-emerald-800 transition-colors shrink-0"
+                        >
+                          Set URL
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview Card */}
+                  <div>
+                    {editingProduct.lifestyle_image_url ? (
+                      <div className="bg-white p-3 rounded-xl border border-[#d6e3da] space-y-2">
+                        <span className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                          Current On-Site Installation Preview:
+                        </span>
+                        <div className="relative aspect-[16/8] rounded-lg overflow-hidden border border-[#d6e3da] bg-black">
+                          <img
+                            src={editingProduct.lifestyle_image_url}
+                            alt="On-site installation preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
+                            ✓ Real Installation View
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs pt-1">
+                          <span className="text-[11px] text-[#7d827d] truncate max-w-[200px]">
+                            {editingProduct.lifestyle_image_url}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingProduct({ ...editingProduct, lifestyle_image_url: '' })}
+                            className="text-red-600 hover:text-red-800 text-xs font-semibold cursor-pointer"
+                          >
+                            Remove On-Site Photo
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white p-6 rounded-xl border border-dashed border-[#c9c7bd] text-center h-full flex flex-col items-center justify-center">
+                        <CheckCircle2 className="w-8 h-8 text-neutral-300 mx-auto mb-1" />
+                        <p className="text-xs text-[#5b605b] font-medium">
+                          No On-Site Photo Configured
+                        </p>
+                        <p className="text-[11px] text-[#7d827d]">
+                          Upload a photo of this fixture installed on a pole in Kerala to display real-world proof.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3">
+              {/* SECTION 4: PRODUCT HIGHLIGHTS */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-[#1f2220] uppercase tracking-wider font-serif">
+                  3. Key Highlights & Customer Guidance
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Best Suited For</label>
+                    <input
+                      type="text"
+                      value={editingProduct.best_for || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, best_for: e.target.value })}
+                      placeholder="e.g. Compound roads, residential layouts, villas"
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Why Choose This Model</label>
+                    <input
+                      type="text"
+                      value={editingProduct.why_choose || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, why_choose: e.target.value })}
+                      placeholder="e.g. 60,000mAh battery delivers 2 full days of rainy backup"
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#1f2220] mb-1">Installation Tip / Keep in Mind</label>
+                    <input
+                      type="text"
+                      value={editingProduct.keep_in_mind || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, keep_in_mind: e.target.value })}
+                      placeholder="e.g. Recommended mounting height is 5-6 meters"
+                      className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Bottom Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e4e2da]">
                 <button
                   type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="px-4 py-2 rounded-md border border-[#c9c7bd] text-xs text-[#5b605b]"
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setProductUrlInput('');
+                    setLifestyleUrlInput('');
+                  }}
+                  className="px-5 py-2 rounded-md border border-[#c9c7bd] text-xs font-semibold text-[#5b605b] hover:bg-[#f6f4ee] cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="bg-[#E4B241] text-[#1f2220] font-bold px-5 py-2 rounded-md text-xs">
-                  Save Product
+                <button
+                  type="submit"
+                  disabled={uploadingImage}
+                  className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-6 py-2 rounded-md text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Product & Photos</span>
                 </button>
               </div>
             </form>
           )}
 
+          {/* PRODUCT CARDS LIST */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {products.map((p) => (
-              <div key={p.id} className="bg-white p-5 rounded-lg border border-[#e4e2da] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 object-cover rounded border" />}
+            {products.map((p) => {
+              const displayImg = p.fixture_image_url || p.image_url || '/images/products/solar-streetlight-600w-s1-fixture.webp';
+              const photoCount = p.images && p.images.length > 0 ? p.images.length : (p.fixture_image_url || p.image_url ? 1 : 0);
+
+              return (
+                <div key={p.id} className="bg-white p-5 rounded-xl border border-[#e4e2da] shadow-xs space-y-4 hover:shadow-sm transition-shadow">
+                  {/* Top Bar with Title & Actions */}
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-bold text-[#1f2220] text-base font-serif">{p.name}</h3>
-                      <span className="text-xs text-[#9a6f0c]">{p.category}</span>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-[#1f2220] text-base font-serif">{p.name}</h3>
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          {p.category}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#9a6f0c] font-medium mt-0.5">
+                        {p.wattage_range || p.subtitle}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={`/products/${p.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 rounded-md hover:bg-[#f6f4ee] text-[#5b605b] hover:text-[#1f2220] transition-colors"
+                        title="View on website"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                      <button
+                        onClick={() => handleStartEditProduct(p)}
+                        className="bg-[#f6f4ee] hover:bg-[#E4B241] text-[#1f2220] text-xs font-bold px-3 py-1.5 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProductClick(p.id)}
+                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="space-x-2">
-                    <button onClick={() => setEditingProduct(p)} className="text-[#9a6f0c] text-xs font-semibold hover:underline">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDeleteProductClick(p.id)} className="text-red-600 text-xs font-semibold hover:underline">
-                      Delete
-                    </button>
+
+                  {/* Dual Image Previews (Product Fixture + On-Site Kerala Photo) */}
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    {/* Fixture Image Preview */}
+                    <div className="space-y-1">
+                      <span className="block text-[10px] font-bold text-[#7d827d] uppercase tracking-wider">
+                        Main Fixture Photo:
+                      </span>
+                      <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-[#fbf9f4] border border-[#e5e3db] flex items-center justify-center p-2">
+                        <img src={displayImg} alt={p.name} className="w-full h-full object-contain" />
+                        <div className="absolute bottom-1 right-1 bg-[#1f2220]/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                          <ImageIcon className="w-2.5 h-2.5 text-[#E4B241]" />
+                          <span>{photoCount} {photoCount === 1 ? 'photo' : 'photos'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* On-Site Kerala Photo Preview */}
+                    <div className="space-y-1">
+                      <span className="block text-[10px] font-bold text-[#7d827d] uppercase tracking-wider">
+                        On-Site Installation Photo:
+                      </span>
+                      {p.lifestyle_image_url ? (
+                        <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black border border-[#d6e3da]">
+                          <img src={p.lifestyle_image_url} alt="On-site installation" className="w-full h-full object-cover" />
+                          <div className="absolute bottom-1 right-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                            ✓ On-Site
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="aspect-[4/3] rounded-lg border border-dashed border-[#c9c7bd] bg-[#fbf9f4] flex flex-col items-center justify-center p-2 text-center">
+                          <CheckCircle2 className="w-5 h-5 text-neutral-300 mb-1" />
+                          <span className="text-[10px] text-[#7d827d]">No on-site photo yet</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  <p className="text-xs text-[#5b605b] line-clamp-2 leading-relaxed">
+                    {p.description}
+                  </p>
                 </div>
-                <p className="text-xs text-[#5b605b]">{p.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

@@ -5,6 +5,9 @@ import { Metadata } from 'next';
 import { getProducts } from '@/lib/data';
 import { ShieldCheck, BatteryCharging, Sun, Zap, CheckCircle2, ArrowRight, Download, Sliders, MessageCircle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'Solar Street Lights & Commercial Outdoor Lighting | FRK Lighting Kerala',
   description: 'Explore FRK Lighting solar street light models from 600W to 1200W with LiFePO4 batteries, IP67 waterproofing, 2-day rainy backup, and high-efficiency monocrystalline panels.',
@@ -80,6 +83,12 @@ export default async function ProductsPage() {
                         {specs?.battery?.ip_rating && (
                           <div className="absolute top-3 right-3 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded shadow-sm">
                             IP67
+                          </div>
+                        )}
+                        {prod.images && prod.images.length > 1 && (
+                          <div className="absolute bottom-3 right-3 bg-[#1f2220]/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                            <span className="text-[#E4B241]">●</span>
+                            <span>{prod.images.length} photos</span>
                           </div>
                         )}
                       </div>

@@ -20,6 +20,10 @@ import {
   Award
 } from 'lucide-react';
 import { getProducts } from '@/lib/data';
+import ProductGallery from '@/components/ProductGallery';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -80,58 +84,18 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Visual Showcase */}
           <div className="lg:col-span-6 space-y-6">
-            {/* Primary Product Cutout / Fixture View */}
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#fbf9f4] border border-[#e5e3db] shadow-sm flex items-center justify-center p-6 group">
-              <Image
-                src={product.fixture_image_url || product.image_url || '/images/products/solar-streetlight-600w-s1-fixture.webp'}
-                alt={product.name}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                unoptimized
-              />
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5">
-                <span className="bg-[#1f2220] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                  {product.category}
-                </span>
-                <span className="bg-[#E4B241] text-[#1f2220] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-xs">
-                  {product.wattage_range}
-                </span>
-              </div>
-              <div className="absolute top-4 right-4 bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded shadow-xs flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                IP67 Certified
-              </div>
-            </div>
-
-            {/* Real World Site Installation Photo */}
-            {product.lifestyle_image_url && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-[#5b605b] font-medium px-1">
-                  <span className="flex items-center gap-1 text-[#1f2220] font-semibold">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Actual On-Site Kerala Installation Photo
-                  </span>
-                  <span>5-6m Galvanized Pole</span>
-                </div>
-                <div className="relative aspect-[16/8] rounded-xl overflow-hidden border border-[#e5e3db] shadow-xs group">
-                  <Image
-                    src={product.lifestyle_image_url}
-                    alt={`${product.name} installed view`}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3.5">
-                    <p className="text-xs text-white/95 font-medium">
-                      Installed with dusk-to-dawn intelligent solar controller & LiFePO4 battery enclosure.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <ProductGallery
+              productName={product.name}
+              category={product.category}
+              wattageRange={product.wattage_range}
+              images={
+                product.images && product.images.length > 0
+                  ? product.images
+                  : [product.fixture_image_url || product.image_url || '/images/products/solar-streetlight-600w-s1-fixture.webp']
+              }
+              mainImage={product.fixture_image_url || product.image_url || '/images/products/solar-streetlight-600w-s1-fixture.webp'}
+              lifestyleImage={product.lifestyle_image_url}
+            />
 
             {/* Compliance & Quality Badges */}
             <div className="grid grid-cols-3 gap-3 pt-2">

@@ -1,10 +1,10 @@
-import { Blog, Product, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog, InstallationStory, CustomerTestimonial } from './types';
+import { Blog, Product, ProductSpecs, ApplicationItem, Inquiry, SiteSettings, KeepAliveLog, InstallationStory, CustomerTestimonial } from './types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   hero_title: "Solar street lights for Kerala's roads, estates and businesses",
   hero_subtitle: "FRK Lighting supplies and installs solar-powered street lights that turn on at dusk and off at dawn. No trenching, no cable runs and no electricity bill.",
-  hero_image_url: "/images/frk1.webp",
+  hero_image_url: "/images/frk-hero-products.jpg",
   phone: "+91 70258 88461",
   whatsapp: "+91 70258 88461",
   email: "frklighting@gmail.com",
@@ -195,6 +195,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-600w-s1-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-600w-s1-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-600w-s1-install.webp",
+    images: ["/images/products/solar-streetlight-600w-s1-fixture.webp"],
     is_active: true,
     sort_order: 1,
     specs: {
@@ -250,6 +251,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-600w-s2-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-600w-s2-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-600w-s2-install.webp",
+    images: ["/images/products/solar-streetlight-600w-s2-fixture.webp"],
     is_active: true,
     sort_order: 2,
     specs: {
@@ -305,6 +307,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-800w-warm-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-800w-warm-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-800w-warm-install.webp",
+    images: ["/images/products/solar-streetlight-800w-warm-fixture.webp"],
     is_active: true,
     sort_order: 3,
     specs: {
@@ -360,6 +363,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-800w-white-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-800w-white-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-800w-white-install.webp",
+    images: ["/images/products/solar-streetlight-800w-white-fixture.webp"],
     is_active: true,
     sort_order: 4,
     specs: {
@@ -415,6 +419,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-1000w-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-1000w-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-1000w-install.webp",
+    images: ["/images/products/solar-streetlight-1000w-fixture.webp"],
     is_active: true,
     sort_order: 5,
     specs: {
@@ -470,6 +475,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "/images/products/solar-streetlight-1200w-fixture.webp",
     fixture_image_url: "/images/products/solar-streetlight-1200w-fixture.webp",
     lifestyle_image_url: "/images/products/solar-streetlight-1200w-install.webp",
+    images: ["/images/products/solar-streetlight-1200w-fixture.webp"],
     is_active: true,
     sort_order: 6,
     specs: {
@@ -879,24 +885,109 @@ export async function getProducts(): Promise<Product[]> {
     const extraMemory = memoryProducts.filter((p) => !dbSlugs.has(p.slug));
     const enrichedDb = dbProducts.map((dbp) => {
       const initial = INITIAL_PRODUCTS.find((ip) => ip.slug === dbp.slug);
+      const dbSpecs = (dbp.specs || {}) as any;
+      const initialSpecs = (initial?.specs || {}) as any;
+
+      // Extract multiple images array
+      let productImages: string[] = [];
+      if (Array.isArray(dbp.images) && dbp.images.length > 0) {
+        productImages = dbp.images.filter(Boolean);
+      } else if (Array.isArray(dbSpecs?.images) && dbSpecs.images.length > 0) {
+        productImages = dbSpecs.images.filter(Boolean);
+      } else if (Array.isArray(initial?.images) && initial.images.length > 0) {
+        productImages = initial.images.filter(Boolean);
+      }
+
+      // Check user uploaded primary image vs initial
+      const userFixture = dbp.fixture_image_url && dbp.fixture_image_url !== initial?.fixture_image_url ? dbp.fixture_image_url : null;
+      const userImage = dbp.image_url && dbp.image_url !== initial?.image_url ? dbp.image_url : null;
+
+      const primaryImg =
+        userFixture ||
+        userImage ||
+        productImages[0] ||
+        dbp.fixture_image_url ||
+        dbp.image_url ||
+        initial?.fixture_image_url ||
+        initial?.image_url ||
+        '/images/products/solar-streetlight-600w-s1-fixture.webp';
+
+      if (primaryImg && !productImages.includes(primaryImg)) {
+        productImages = [primaryImg, ...productImages];
+      }
+      if (productImages.length === 0 && primaryImg) {
+        productImages = [primaryImg];
+      }
+
+      const lifestyleImg =
+        (dbp.lifestyle_image_url !== undefined && dbp.lifestyle_image_url !== null && dbp.lifestyle_image_url !== '')
+          ? dbp.lifestyle_image_url
+          : (initial?.lifestyle_image_url || '');
+
+      const mergedSpecs = {
+        ...initialSpecs,
+        ...dbSpecs,
+        images: productImages,
+        main_image: primaryImg,
+        panel: { ...(initialSpecs?.panel || {}), ...(dbSpecs?.panel || {}) },
+        battery: { ...(initialSpecs?.battery || {}), ...(dbSpecs?.battery || {}) },
+        lighting: { ...(initialSpecs?.lighting || {}), ...(dbSpecs?.lighting || {}) }
+      };
+
       return {
         ...initial,
         ...dbp,
-        fixture_image_url: dbp.fixture_image_url || initial?.fixture_image_url || dbp.image_url,
-        lifestyle_image_url: dbp.lifestyle_image_url || initial?.lifestyle_image_url,
-        specs: dbp.specs || initial?.specs
+        image_url: primaryImg,
+        fixture_image_url: primaryImg,
+        lifestyle_image_url: lifestyleImg,
+        images: productImages,
+        specs: mergedSpecs
       };
     });
     return [...enrichedDb, ...extraMemory];
   }
 
-  return memoryProducts;
+  return memoryProducts.map((p) => ({
+    ...p,
+    images: p.images && p.images.length > 0 ? p.images : [p.fixture_image_url || p.image_url || '/images/products/solar-streetlight-600w-s1-fixture.webp']
+  }));
 }
 
 export async function saveProduct(product: Partial<Product>): Promise<Product> {
   const isEdit = Boolean(product.id);
   const id = product.id || `prod-${Date.now()}`;
   const slug = product.slug || product.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `prod-${Date.now()}`;
+
+  // Normalize images array
+  let images: string[] = [];
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    images = product.images.filter(Boolean);
+  } else if (Array.isArray((product.specs as any)?.images) && (product.specs as any).images.length > 0) {
+    images = (product.specs as any).images.filter(Boolean);
+  }
+
+  // Determine main image
+  const mainImage = product.fixture_image_url || product.image_url || images[0] || "/images/products/solar-streetlight-600w-s1-fixture.webp";
+
+  if (mainImage && !images.includes(mainImage)) {
+    images = [mainImage, ...images];
+  }
+  if (images.length === 0 && mainImage) {
+    images = [mainImage];
+  }
+
+  // Ensure mainImage is at index 0 of images array
+  if (images.includes(mainImage) && images[0] !== mainImage) {
+    images = [mainImage, ...images.filter((img) => img !== mainImage)];
+  }
+
+  const lifestyleImage = product.lifestyle_image_url !== undefined ? product.lifestyle_image_url : '';
+
+  const updatedSpecs: ProductSpecs & { images?: string[]; main_image?: string } = {
+    ...(product.specs || {}),
+    images,
+    main_image: mainImage
+  };
 
   let updatedProd: Product = {
     id,
@@ -909,10 +1000,11 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
     best_for: product.best_for || "Roads and paths",
     why_choose: product.why_choose || "Reliable performance",
     keep_in_mind: product.keep_in_mind || "Standard installation",
-    image_url: product.image_url || "/images/frk4.webp",
-    fixture_image_url: product.fixture_image_url || product.image_url || "/images/frk4.webp",
-    lifestyle_image_url: product.lifestyle_image_url,
-    specs: product.specs,
+    image_url: mainImage,
+    fixture_image_url: mainImage,
+    lifestyle_image_url: lifestyleImage,
+    images,
+    specs: updatedSpecs,
     is_active: product.is_active !== undefined ? product.is_active : true,
     sort_order: product.sort_order || memoryProducts.length + 1
   };
@@ -930,23 +1022,24 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
         why_choose: updatedProd.why_choose,
         keep_in_mind: updatedProd.keep_in_mind,
         image_url: updatedProd.image_url,
+        fixture_image_url: updatedProd.fixture_image_url,
+        lifestyle_image_url: updatedProd.lifestyle_image_url,
+        specs: updatedProd.specs,
         is_active: updatedProd.is_active,
         sort_order: updatedProd.sort_order
       };
 
-      const fullPayload: Record<string, any> = {
+      const fullWithImages: Record<string, any> = {
         ...corePayload,
-        fixture_image_url: updatedProd.fixture_image_url,
-        lifestyle_image_url: updatedProd.lifestyle_image_url,
-        specs: updatedProd.specs
+        images: updatedProd.images
       };
 
       if (isEdit && isUUID(product.id)) {
-        fullPayload.id = product.id;
+        fullWithImages.id = product.id;
         corePayload.id = product.id;
-        const { error } = await supabase.from('products').upsert([fullPayload], { onConflict: 'slug' }).select();
+        const { error } = await supabase.from('products').upsert([fullWithImages], { onConflict: 'slug' }).select();
         if (error) {
-          console.warn("Supabase saveProduct full payload fallback:", error.message);
+          console.warn("Supabase saveProduct full payload with images fallback:", error.message);
           const { error: coreErr } = await supabase.from('products').upsert([corePayload], { onConflict: 'slug' });
           if (coreErr) {
             console.error("Supabase saveProduct error:", coreErr);
@@ -954,7 +1047,7 @@ export async function saveProduct(product: Partial<Product>): Promise<Product> {
           }
         }
       } else {
-        const { data, error } = await supabase.from('products').insert([fullPayload]).select();
+        const { data, error } = await supabase.from('products').insert([fullWithImages]).select();
         if (!error && data && data.length > 0 && data[0].id) {
           updatedProd.id = data[0].id;
         } else if (error) {
