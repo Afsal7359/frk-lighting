@@ -98,10 +98,10 @@ export default function Footer({ settings }: FooterProps) {
           {/* Copyright & Admin Link */}
           <div className="pt-6 border-t border-[#3d403c] flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-[#9e9c93]">
             <span>© {new Date().getFullYear()} FRK Lighting Solutions. All rights reserved.</span>
-            <Link href="/admin/login" className="hover:text-amber-400 flex items-center gap-1">
+            {/* <Link href="/admin/login" className="hover:text-amber-400 flex items-center gap-1">
               <Lock className="w-3 h-3" />
               <span>Admin Panel</span>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </footer>
