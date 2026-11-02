@@ -1153,6 +1153,17 @@ export default function AdminDashboardPage() {
                 className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
               />
             </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-[#1f2220] mb-1">Office Location / Address</label>
+              <input
+                type="text"
+                value={editingSettings.address || ''}
+                onChange={(e) => setEditingSettings({ ...editingSettings, address: e.target.value })}
+                placeholder="Ramanattukara, Kinfra Advanced Technology Park, Kerala"
+                className="w-full bg-white border border-[#c9c7bd] rounded-md px-3 py-2 text-xs text-[#1f2220]"
+              />
+            </div>
           </div>
         </form>
       )}

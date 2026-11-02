@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Lock } from 'lucide-react';
+import { Lock, MapPin } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 
 interface FooterProps {
@@ -92,6 +92,19 @@ export default function Footer({ settings }: FooterProps) {
                   Instagram {settings.instagram_handle}
                 </a>
               </p>
+              {settings.address && (
+                <p className="m-0 pt-1.5 flex items-start gap-1.5 text-white/90 text-sm">
+                  <MapPin className="w-4 h-4 text-[#E4B241] shrink-0 mt-0.5" />
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/90 hover:text-white hover:underline leading-relaxed"
+                  >
+                    {settings.address}
+                  </a>
+                </p>
+              )}
             </div>
           </div>
 

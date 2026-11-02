@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { getSiteSettings } from '@/lib/data';
 
 import ContactForm from '@/components/ContactForm';
+import { MapPin } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Contact',
@@ -57,6 +58,19 @@ export default async function ContactPage() {
                   <b className="block text-[#1f2220] font-serif mb-1">Instagram</b>
                   <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="text-[#9a6f0c] hover:underline">
                     {settings.instagram_handle}
+                  </a>
+                </li>
+
+                <li className="pt-4">
+                  <b className="block text-[#1f2220] font-serif mb-1">Office Location / Address</b>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address || 'Ramanattukara, Kinfra Advanced Technology Park, Kerala')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#5b605b] hover:text-[#9a6f0c] transition-colors flex items-start gap-1.5 leading-relaxed"
+                  >
+                    <MapPin className="w-4 h-4 text-[#E4B241] shrink-0 mt-0.5" />
+                    <span>{settings.address || 'Ramanattukara, Kinfra Advanced Technology Park, Kerala'}</span>
                   </a>
                 </li>
 

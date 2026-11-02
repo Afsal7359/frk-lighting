@@ -79,6 +79,8 @@ export default async function RootLayout({
     email: settings.email,
     address: {
       '@type': 'PostalAddress',
+      streetAddress: settings.address || 'Ramanattukara, Kinfra Advanced Technology Park',
+      addressLocality: 'Ramanattukara',
       addressRegion: 'Kerala',
       addressCountry: 'IN'
     },

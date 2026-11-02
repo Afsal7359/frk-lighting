@@ -10,7 +10,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   email: "frklighting@gmail.com",
   instagram: "https://www.instagram.com/frk.lighting/",
   instagram_handle: "@frk.lighting",
-  address: "FRK Lighting Solutions, Kerala, India",
+  address: "Ramanattukara, Kinfra Advanced Technology Park, Kerala",
   service_area: "Kerala & South India. Custom sizing, site survey & installation services available.",
   announcement_banner: "⚡ Free site assessment & custom quote for solar lighting projects across Kerala!",
   footer_text: "Solar street lights, flood lights and pathway lights for roads, estates, campuses, car parks and businesses across Kerala."
