@@ -40,8 +40,10 @@ import {
   Headphones,
   Sparkles,
   Zap,
-  Truck
+  Truck,
+  Maximize2
 } from 'lucide-react';
+import OnSitePreviewModal from '@/components/OnSitePreviewModal';
 import {
   Blog,
   Product,
@@ -217,6 +219,7 @@ export default function AdminDashboardPage() {
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [productUrlInput, setProductUrlInput] = useState('');
   const [lifestyleUrlInput, setLifestyleUrlInput] = useState('');
+  const [previewModalImg, setPreviewModalImg] = useState<{ url: string; title: string } | null>(null);
   const [editingApplication, setEditingApplication] = useState<Partial<ApplicationItem> | null>(null);
   const [editingStory, setEditingStory] = useState<Partial<InstallationStory> | null>(null);
   const [editingTestimonial, setEditingTestimonial] = useState<Partial<CustomerTestimonial> | null>(null);
@@ -1717,17 +1720,52 @@ export default function AdminDashboardPage() {
                   <div>
                     {editingProduct.lifestyle_image_url ? (
                       <div className="bg-white p-3 rounded-xl border border-[#d6e3da] space-y-2">
-                        <span className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
-                          Current On-Site Installation Preview:
-                        </span>
-                        <div className="relative aspect-[16/8] rounded-lg overflow-hidden border border-[#d6e3da] bg-black">
+                        <div className="flex items-center justify-between">
+                          <span className="block text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                            Current On-Site Installation Preview:
+                          </span>
+                          <span className="text-[10px] text-[#9a6f0c] font-semibold flex items-center gap-1">
+                            <Maximize2 className="w-3 h-3" /> Click to enlarge
+                          </span>
+                        </div>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            setPreviewModalImg({
+                              url: editingProduct.lifestyle_image_url!,
+                              title: editingProduct.name
+                                ? `${editingProduct.name} - On-Site Installation`
+                                : 'On-Site Installation Preview',
+                            })
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setPreviewModalImg({
+                                url: editingProduct.lifestyle_image_url!,
+                                title: editingProduct.name
+                                  ? `${editingProduct.name} - On-Site Installation`
+                                  : 'On-Site Installation Preview',
+                              });
+                            }
+                          }}
+                          className="relative aspect-[16/8] rounded-lg overflow-hidden border border-[#d6e3da] bg-black cursor-pointer group focus:outline-none focus:ring-2 focus:ring-[#E4B241]"
+                          title="Click to view big on-site installation preview"
+                        >
                           <img
                             src={editingProduct.lifestyle_image_url}
                             alt="On-site installation preview"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
                             ✓ Real Installation View
+                          </div>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="bg-[#E4B241] text-black font-bold text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5 shadow-lg">
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>Open Big Preview</span>
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center justify-between text-xs pt-1">
@@ -1891,14 +1929,51 @@ export default function AdminDashboardPage() {
 
                     {/* On-Site Kerala Photo Preview */}
                     <div className="space-y-1">
-                      <span className="block text-[10px] font-bold text-[#7d827d] uppercase tracking-wider">
-                        On-Site Installation Photo:
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="block text-[10px] font-bold text-[#7d827d] uppercase tracking-wider">
+                          On-Site Installation Photo:
+                        </span>
+                        {p.lifestyle_image_url && (
+                          <span className="text-[9px] text-[#9a6f0c] font-semibold flex items-center gap-0.5">
+                            <Maximize2 className="w-2.5 h-2.5" /> Enlarge
+                          </span>
+                        )}
+                      </div>
                       {p.lifestyle_image_url ? (
-                        <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black border border-[#d6e3da]">
-                          <img src={p.lifestyle_image_url} alt="On-site installation" className="w-full h-full object-cover" />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            setPreviewModalImg({
+                              url: p.lifestyle_image_url!,
+                              title: `${p.name} - Real On-Site Installation`,
+                            })
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setPreviewModalImg({
+                                url: p.lifestyle_image_url!,
+                                title: `${p.name} - Real On-Site Installation`,
+                              });
+                            }
+                          }}
+                          className="relative aspect-[4/3] rounded-lg overflow-hidden bg-black border border-[#d6e3da] cursor-pointer group focus:outline-none focus:ring-2 focus:ring-[#E4B241]"
+                          title="Click to view big on-site installation preview"
+                        >
+                          <img
+                            src={p.lifestyle_image_url}
+                            alt="On-site installation"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                           <div className="absolute bottom-1 right-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                             ✓ On-Site
+                          </div>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="bg-[#E4B241] text-black text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 shadow">
+                              <Maximize2 className="w-3 h-3" />
+                              <span>Enlarge</span>
+                            </span>
                           </div>
                         </div>
                       ) : (
@@ -3132,6 +3207,13 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+      {/* On-Site Installation Preview Modal */}
+      <OnSitePreviewModal
+        isOpen={Boolean(previewModalImg)}
+        onClose={() => setPreviewModalImg(null)}
+        imageUrl={previewModalImg?.url}
+        productName={previewModalImg?.title}
+      />
     </div>
   );
 }

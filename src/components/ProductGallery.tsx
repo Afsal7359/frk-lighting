@@ -12,6 +12,8 @@ import {
   Star,
   Camera
 } from 'lucide-react';
+import OnSitePreviewModal from '@/components/OnSitePreviewModal';
+
 
 interface ProductGalleryProps {
   productName: string;
@@ -37,6 +39,7 @@ export default function ProductGallery({
   const [selectedIndex, setSelectedIndex] = useState<number>(initialIndex);
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
   const [lightboxView, setLightboxView] = useState<'gallery' | 'lifestyle'>('gallery');
+  const [onSiteModalOpen, setOnSiteModalOpen] = useState<boolean>(false);
 
   const currentImage = validImages[selectedIndex] || validImages[0] || mainImage;
   const isCurrentMain = currentImage === mainImage || selectedIndex === 0;
@@ -214,11 +217,17 @@ export default function ProductGallery({
           </div>
 
           <div
-            className="relative aspect-[16/8] rounded-xl overflow-hidden border border-[#e5e3db] shadow-xs group cursor-zoom-in bg-zinc-900"
-            onClick={() => {
-              setLightboxView('lifestyle');
-              setLightboxOpen(true);
+            role="button"
+            tabIndex={0}
+            className="relative aspect-[16/8] rounded-xl overflow-hidden border border-[#e5e3db] shadow-xs group cursor-pointer bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#E4B241]"
+            onClick={() => setOnSiteModalOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOnSiteModalOpen(true);
+              }
             }}
+            title="Click to view enlarged on-site installation photo"
           >
             <Image
               src={lifestyleImage}
@@ -233,7 +242,8 @@ export default function ProductGallery({
                 <p className="text-xs text-white/95 font-medium">
                   Installed with dusk-to-dawn intelligent solar controller & LiFePO4 battery enclosure.
                 </p>
-                <span className="bg-white/20 hover:bg-white/30 backdrop-blur-xs text-white text-[11px] font-semibold px-2 py-1 rounded ml-2 shrink-0">
+                <span className="bg-[#E4B241] text-black hover:bg-[#d4a233] text-[11px] font-bold px-2.5 py-1 rounded ml-2 shrink-0 flex items-center gap-1 shadow-md transition-colors">
+                  <Maximize2 className="w-3 h-3" />
                   Enlarge
                 </span>
               </div>
@@ -241,6 +251,7 @@ export default function ProductGallery({
           </div>
         </div>
       )}
+
 
       {/* 3. Fullscreen Lightbox Modal */}
       {lightboxOpen && (
@@ -321,6 +332,17 @@ export default function ProductGallery({
           )}
         </div>
       )}
+
+      {/* 4. Rich On-Site Preview Modal */}
+      {lifestyleImage && (
+        <OnSitePreviewModal
+          isOpen={onSiteModalOpen}
+          onClose={() => setOnSiteModalOpen(false)}
+          imageUrl={lifestyleImage}
+          productName={productName}
+        />
+      )}
     </div>
   );
 }
+

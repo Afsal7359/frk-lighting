@@ -46,48 +46,56 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-0">
-      {/* HERO SECTION */}
-      <section className="py-16 md:py-20 bg-white">
-        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-7 space-y-5">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-serif text-[#1f2220] tracking-tight leading-tight">
-                {settings.hero_title}
-              </h1>
+      {/* HERO SECTION - FULL BACKGROUND NIGHT LANDSCAPE (MATCHING CUSTOMER STORIES) */}
+      <section className="relative min-h-[520px] sm:min-h-[580px] lg:min-h-[620px] flex items-center bg-[#111311] overflow-hidden">
+        {/* Background Night Landscape */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={
+              settings.hero_image_url && settings.hero_image_url !== '/images/frk-hero-products.jpg'
+                ? settings.hero_image_url
+                : '/images/frk1.webp'
+            }
+            alt="FRK Lighting Solar Street Lights in Kerala"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center brightness-60"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        </div>
 
-              <p className="text-base sm:text-lg text-[#5b605b] max-w-xl">
-                {settings.hero_subtitle}
-              </p>
+        <div className="relative z-10 max-w-[1160px] mx-auto px-4 sm:px-6 py-20 sm:py-24 w-full">
+          <div className="max-w-2xl lg:max-w-3xl space-y-5">
+            <span className="text-xs sm:text-sm font-bold tracking-widest text-[#E4B241] uppercase font-sans">
+              SOLAR STREET LIGHTING IN KERALA
+            </span>
 
-              <div className="flex flex-wrap items-center gap-3 pt-3">
-                <Link
-                  href="/contact"
-                  className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-6 py-3 rounded-md text-base transition-colors"
-                >
-                  Get a quote
-                </Link>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-serif text-white tracking-tight leading-[1.15]">
+              {settings.hero_title}
+            </h1>
 
-                <Link
-                  href="/products"
-                  className="bg-white hover:bg-[#f6f4ee] text-[#1f2220] border-2 border-[#1f2220] font-bold px-6 py-3 rounded-md text-base transition-colors"
-                >
-                  See our products
-                </Link>
-              </div>
-            </div>
+            <p className="text-base sm:text-lg text-[#d3d7d3] leading-relaxed max-w-2xl pt-1">
+              {settings.hero_subtitle}
+            </p>
 
-            <div className="lg:col-span-5">
-              <div className="relative rounded-2xl overflow-hidden bg-[#0d0f18] aspect-[4/3] border border-[#2a2d3d] shadow-xl group">
-                <Image
-                  src={settings.hero_image_url || "/images/frk-hero-products.jpg"}
-                  alt="FRK Solar Street Lights and Lighting Solutions Lineup"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 45vw"
-                  priority
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  unoptimized
-                />
-              </div>
+            <div className="flex flex-wrap items-center gap-3 pt-3">
+              <Link
+                href="/contact"
+                className="bg-[#E4B241] hover:bg-[#efc25b] text-[#1f2220] font-bold px-7 py-3.5 rounded-lg text-sm sm:text-base inline-flex items-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
+              >
+                <span>Get a quote</span>
+                <ChevronRight className="w-4 h-4 stroke-[3]" />
+              </Link>
+
+              <Link
+                href="/products"
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white font-bold px-6 py-3.5 rounded-lg text-sm sm:text-base transition-all backdrop-blur-xs"
+              >
+                See our products
+              </Link>
             </div>
           </div>
         </div>
@@ -279,7 +287,7 @@ export default async function HomePage() {
             <div className="lg:col-span-5 space-y-2">
               <h2 className="text-2xl sm:text-4xl font-extrabold font-serif text-[#1f2220]">Questions we hear often</h2>
               <p className="text-[#5b605b] text-sm">
-                Can't find yours? <Link href="/contact" className="underline font-semibold">Ask us directly</Link>.
+                Can&apos;t find yours? <Link href="/contact" className="underline font-semibold">Ask us directly</Link>.
               </p>
             </div>
 

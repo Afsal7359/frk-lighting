@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   hero_title: "Solar street lights for Kerala's roads, estates and businesses",
   hero_subtitle: "FRK Lighting supplies and installs solar-powered street lights that turn on at dusk and off at dawn. No trenching, no cable runs and no electricity bill.",
-  hero_image_url: "/images/frk-hero-products.jpg",
+  hero_image_url: "/images/frk1.webp",
   phone: "+91 70258 88461",
   whatsapp: "+91 70258 88461",
   email: "frklighting@gmail.com",

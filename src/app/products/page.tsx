@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { getProducts } from '@/lib/data';
 import { ShieldCheck, BatteryCharging, Sun, Zap, CheckCircle2, ArrowRight, Download, Sliders, MessageCircle } from 'lucide-react';
+import OnSiteImageCard from '@/components/OnSiteImageCard';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -93,24 +94,12 @@ export default async function ProductsPage() {
                         )}
                       </div>
 
-                      {/* Real Installation Preview */}
+                      {/* Real Installation Preview with Big Popup Modal */}
                       {prod.lifestyle_image_url && (
-                        <div className="relative aspect-[16/7] rounded-lg overflow-hidden border border-[#e8e6df] shadow-xs group">
-                          <Image
-                            src={prod.lifestyle_image_url}
-                            alt={`${prod.name} installed view`}
-                            fill
-                            sizes="(max-width: 1024px) 100vw, 40vw"
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            unoptimized
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2.5">
-                            <span className="text-[11px] text-white/95 font-medium flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#E4B241]" />
-                              Real Installation View
-                            </span>
-                          </div>
-                        </div>
+                        <OnSiteImageCard
+                          imageUrl={prod.lifestyle_image_url}
+                          productName={prod.name}
+                        />
                       )}
                     </div>
 
