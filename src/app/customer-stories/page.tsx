@@ -14,27 +14,35 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  MessageCircle
+  MessageCircle,
+  Maximize2,
+  CheckCircle2
 } from 'lucide-react';
-import { InstallationStory, CustomerTestimonial } from '@/lib/types';
-import { getInstallationStories, getTestimonials } from '@/lib/data';
+import { InstallationStory, CustomerTestimonial, SiteSettings } from '@/lib/types';
+import { getInstallationStories, getTestimonials, getSiteSettings } from '@/lib/data';
 import QuoteModal from '@/components/QuoteModal';
+import StoryPreviewModal from '@/components/StoryPreviewModal';
 
 export default function CustomerStoriesPage() {
   const [stories, setStories] = useState<InstallationStory[]>([]);
   const [testimonials, setTestimonials] = useState<CustomerTestimonial[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | undefined>(undefined);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [selectedStoryForQuote, setSelectedStoryForQuote] = useState<InstallationStory | null>(null);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
 
   useEffect(() => {
     async function loadData() {
-      const [storiesData, testimonialsData] = await Promise.all([
+      const [storiesData, testimonialsData, settingsData] = await Promise.all([
         getInstallationStories(),
-        getTestimonials()
+        getTestimonials(),
+        getSiteSettings()
       ]);
       setStories(storiesData);
       setTestimonials(testimonialsData);
+      setSiteSettings(settingsData);
     }
     loadData();
   }, []);
@@ -57,6 +65,16 @@ export default function CustomerStoriesPage() {
 
   const handleNextTestimonial = () => {
     setActiveTestimonialIndex((prev) => (prev < testimonials.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleOpenPreview = (story: InstallationStory) => {
+    const index = filteredStories.findIndex((s) => s.id === story.id || s.slug === story.slug);
+    setPreviewIndex(index >= 0 ? index : 0);
+  };
+
+  const handleOpenQuoteFromStory = (story: InstallationStory) => {
+    setSelectedStoryForQuote(story);
+    setQuoteModalOpen(true);
   };
 
   return (
@@ -109,11 +127,15 @@ export default function CustomerStoriesPage() {
           {/* Header & Filter Pills */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E4B241]/15 text-[#9a6f0c] text-xs font-semibold uppercase tracking-wider border border-[#E4B241]/30">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#9a6f0c]" />
+                Verified Kerala Field Photos
+              </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold font-serif text-[#1f2220]">
                 Installation Success Stories
               </h2>
               <p className="text-sm sm:text-base text-[#5b605b]">
-                A few of our recent solar lighting installations.
+                Real site installations across Kerala. Tap any photo to preview in high resolution portrait view.
               </p>
             </div>
 
@@ -124,7 +146,10 @@ export default function CustomerStoriesPage() {
                 return (
                   <button
                     key={cat}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      setPreviewIndex(null);
+                    }}
                     className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#E4B241] text-[#1f2220] shadow-xs'
@@ -138,49 +163,128 @@ export default function CustomerStoriesPage() {
             </div>
           </div>
 
-          {/* Stories Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Stories Grid: Portrait-Optimized Cards with Click-to-Enlarge Preview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredStories.map((story) => (
               <div
                 key={story.id}
-                className="bg-white rounded-xl border border-[#e4e2da] overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group"
+                className="bg-white rounded-2xl border border-[#e4e2da] overflow-hidden shadow-xs hover:shadow-xl hover:border-[#E4B241]/70 transition-all duration-300 flex flex-col justify-between group"
               >
-                <div>
-                  <div className="relative aspect-[16/10] bg-[#f6f4ee] overflow-hidden">
-                    <Image
-                      src={story.image_url}
-                      alt={story.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      unoptimized
-                    />
+                {/* 1. Portrait Image Container with Full Height Framing & Click to Preview */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleOpenPreview(story)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleOpenPreview(story);
+                    }
+                  }}
+                  className="relative aspect-[4/5] bg-[#151715] overflow-hidden cursor-zoom-in group/img focus:outline-none focus:ring-2 focus:ring-[#E4B241]"
+                  title="Click to preview large on-site installation photo"
+                >
+                  <Image
+                    src={story.image_url}
+                    alt={`${story.title} Kerala installation photo`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover object-center group-hover/img:scale-105 transition-transform duration-500"
+                    unoptimized
+                  />
+
+                  {/* Gradient Lighting Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/35 pointer-events-none" />
+
+                  {/* Top Badges */}
+                  <div className="absolute top-3.5 inset-x-3.5 flex items-center justify-between gap-2 pointer-events-none">
+                    <span className="bg-[#1f2220]/90 text-white border border-white/15 text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1.5 backdrop-blur-xs">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>On-Site</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPreview(story);
+                      }}
+                      className="pointer-events-auto bg-black/60 hover:bg-[#E4B241] text-white hover:text-[#1f2220] p-2 rounded-full backdrop-blur-xs transition-colors shadow-md cursor-pointer border border-white/15"
+                      title="Enlarge photo"
+                      aria-label={`Enlarge photo for ${story.title}`}
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
                   </div>
-                  <div className="p-5 space-y-3">
-                    <h3 className="text-lg font-bold font-serif text-[#1f2220]">
-                      {story.title}
-                    </h3>
-                    <div className="space-y-1 text-xs text-[#5b605b]">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#9a6f0c] shrink-0" />
-                        <span>{story.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Lightbulb className="w-3.5 h-3.5 text-[#9a6f0c] shrink-0" />
-                        <span>{story.category}</span>
-                      </div>
-                    </div>
+
+                  {/* Center Hover Prompt */}
+                  <div className="absolute inset-0 bg-black/35 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                    <span className="bg-[#1f2220]/95 text-white border border-[#E4B241]/80 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-2xl backdrop-blur-xs transform group-hover/img:scale-105 transition-transform">
+                      <Maximize2 className="w-3.5 h-3.5 text-[#E4B241]" />
+                      <span>Click to Enlarge</span>
+                    </span>
+                  </div>
+
+                  {/* Bottom Image Info */}
+                  <div className="absolute bottom-3 inset-x-3.5 flex items-center justify-between gap-2 pointer-events-none">
+                    <span className="text-xs text-white/95 font-medium flex items-center gap-1.5 drop-shadow-md">
+                      <MapPin className="w-3.5 h-3.5 text-[#E4B241] shrink-0" />
+                      <span className="truncate max-w-[170px]">{story.location}</span>
+                    </span>
+
+                    <span className="bg-[#E4B241] text-[#1f2220] text-[10px] font-bold px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
+                      <Maximize2 className="w-2.5 h-2.5" />
+                      <span>Preview</span>
+                    </span>
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 flex justify-end">
-                  <button
-                    onClick={() => setQuoteModalOpen(true)}
-                    aria-label={`Inquire about ${story.title}`}
-                    className="w-9 h-9 rounded-full border border-[#e4e2da] hover:border-[#1f2220] hover:bg-[#1f2220] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-[#1f2220]"
-                  >
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                {/* 2. Card Content Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#f6f4ee] border border-[#e4e2da] text-[11px] font-semibold text-[#9a6f0c]">
+                        {story.category}
+                      </span>
+                      {story.date && (
+                        <span className="text-[11px] text-[#8f948f]">
+                          {story.date}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-lg font-bold font-serif text-[#1f2220] group-hover:text-[#9a6f0c] transition-colors leading-snug">
+                      {story.title}
+                    </h3>
+
+                    {story.description && (
+                      <p className="text-xs text-[#5b605b] line-clamp-2 leading-relaxed">
+                        {story.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 3. Card Bottom Action Row */}
+                  <div className="pt-3 border-t border-[#f0ede6] flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPreview(story)}
+                      className="text-xs font-bold text-[#1f2220] hover:text-[#9a6f0c] flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5 text-[#E4B241]" />
+                      <span>Preview Photo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenQuoteFromStory(story)}
+                      className="bg-[#1f2220] hover:bg-[#E4B241] text-white hover:text-[#1f2220] text-xs font-bold px-3.5 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      aria-label={`Inquire about ${story.title}`}
+                    >
+                      <span>Inquire</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -355,8 +459,26 @@ export default function CustomerStoriesPage() {
         </div>
       </section>
 
+      {/* Customer Story Image Preview Modal */}
+      <StoryPreviewModal
+        isOpen={previewIndex !== null}
+        onClose={() => setPreviewIndex(null)}
+        stories={filteredStories}
+        currentIndex={previewIndex ?? 0}
+        onNavigate={(newIdx) => setPreviewIndex(newIdx)}
+        onOpenQuote={handleOpenQuoteFromStory}
+        settings={siteSettings}
+      />
+
       {/* Quote Modal */}
-      <QuoteModal isOpen={quoteModalOpen} onClose={() => setQuoteModalOpen(false)} />
+      <QuoteModal
+        isOpen={quoteModalOpen}
+        onClose={() => {
+          setQuoteModalOpen(false);
+          setSelectedStoryForQuote(null);
+        }}
+        settings={siteSettings}
+      />
     </div>
   );
 }

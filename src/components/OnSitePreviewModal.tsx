@@ -18,9 +18,12 @@ export default function OnSitePreviewModal({
   productName = 'Solar Street Light',
   subtitle = 'Real Kerala On-Site Field Installation'
 }: OnSitePreviewModalProps) {
-  // Close on Escape key press
+  // Close on Escape key press and lock body scroll
   useEffect(() => {
     if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -29,7 +32,10 @@ export default function OnSitePreviewModal({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen || !imageUrl) return null;
@@ -38,11 +44,11 @@ export default function OnSitePreviewModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl bg-[#191b19] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-4xl bg-[#191b19] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -73,11 +79,11 @@ export default function OnSitePreviewModal({
         </div>
 
         {/* Modal Image Area */}
-        <div className="relative w-full flex-1 min-h-[260px] sm:min-h-[440px] max-h-[68vh] bg-black/90 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+        <div className="relative w-full flex-1 min-h-[320px] sm:min-h-[480px] max-h-[76vh] bg-black/95 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
           <img
             src={imageUrl}
             alt={`${productName} real on-site installation preview`}
-            className="w-full h-full max-h-[64vh] object-contain rounded-lg"
+            className="w-full h-full max-h-[72vh] object-contain rounded-lg"
           />
         </div>
 

@@ -2862,8 +2862,22 @@ export default function AdminDashboardPage() {
             {stories.map((story) => (
               <div key={story.id} className="bg-white rounded-lg border border-[#e4e2da] overflow-hidden flex flex-col justify-between">
                 <div>
-                  <div className="h-44 bg-[#1f2220] relative overflow-hidden">
-                    <img src={story.image_url} alt={story.title} className="w-full h-full object-cover" />
+                  <div
+                    className="relative aspect-[4/5] max-h-72 bg-[#141614] overflow-hidden group/img cursor-pointer"
+                    onClick={() => setPreviewModalImg({ url: story.image_url, title: `${story.title} - ${story.location}` })}
+                    title="Click to preview large portrait photo"
+                  >
+                    <img
+                      src={story.image_url}
+                      alt={story.title}
+                      className="w-full h-full object-cover object-center group-hover/img:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end justify-between p-3">
+                      <span className="text-[11px] text-white flex items-center gap-1.5 font-semibold">
+                        <Maximize2 className="w-3.5 h-3.5 text-[#E4B241]" />
+                        Preview Photo
+                      </span>
+                    </div>
                     <span className="absolute top-2 right-2 bg-black/70 text-[#E4B241] text-[10px] font-bold px-2 py-0.5 rounded capitalize">
                       {story.category.replace(/-/g, ' ')}
                     </span>
