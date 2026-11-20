@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { getBlogs, getProducts, getApplications } from '@/lib/data';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://frklighting.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.frklighting.com';
 
   const blogs = await getBlogs();
   const products = await getProducts();
@@ -29,6 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/about',
     '/blog',
     '/contact',
+    '/customer-stories',
+    '/installation-services',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),

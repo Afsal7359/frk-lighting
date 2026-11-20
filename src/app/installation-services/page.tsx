@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: `${pageSettings.hero_title} | FRK Lighting Solutions`,
       description: pageSettings.hero_subtitle,
-      url: 'https://frklighting.com/installation-services',
+      url: 'https://www.frklighting.com/installation-services',
       type: 'website',
     },
   };

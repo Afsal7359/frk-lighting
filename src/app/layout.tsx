@@ -11,7 +11,7 @@ const archivo = Archivo({ subsets: ['latin'], variable: '--font-serif' });
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://frklighting.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.frklighting.com';
 
   return {
     title: {
@@ -74,7 +74,7 @@ export default async function RootLayout({
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'FRK Lighting Solutions',
-    url: 'https://frklighting.com',
+    url: 'https://www.frklighting.com',
     telephone: settings.phone,
     email: settings.email,
     address: {
