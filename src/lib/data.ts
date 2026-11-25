@@ -18,6 +18,72 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
 
 export const INITIAL_BLOGS: Blog[] = [
   {
+    id: "blog-price-cost-kerala",
+    slug: "solar-street-light-price-in-kerala-what-affects-cost",
+    title: "Solar Street Light Price in Kerala: What Affects Cost",
+    meta_title: "Solar Street Light Price in Kerala: What Affects Cost",
+    read_time: "5 min read",
+    author: "FRK Technical Team",
+    image_url: "/images/frk10.jpg",
+    excerpt: "What decides the price of a solar street light in Kerala: lumens, battery, panel, pole, installation and monsoon design. Learn how to compare quotes.",
+    content: `When comparing solar street light prices in Kerala, quotes often vary significantly—ranging from ₹4,500 for consumer-grade garden lamps to ₹25,000+ for commercial panchayat and estate installations. Understanding what actually drives these price differences helps you choose a system that remains bright every night of the year.
+
+## Key Factors That Determine Solar Street Light Prices in Kerala
+
+A solar street light is an independent, off-grid power plant mounted on a pole. Its durability, brightness, and rainy-day backup are determined by four core engineering components:
+
+### 1. Lumens and LED Fixture Quality
+The true measure of light output is **lumens**, not nominal wattage. Commercial fixtures feature high-efficacy LED modules delivering 140–160 lumens per watt. High-grade fixtures use pressure die-cast aluminium housings with optical PC lenses for wide beam distribution.
+
+### 2. LiFePO4 Battery Capacity and Chemistry
+The battery pack is the single most expensive component in any solar luminaire. Cheap fixtures cut costs by using recycled lithium-ion cells or undersized capacity. High-performance models utilize brand-new **Lithium Iron Phosphate (LiFePO4)** battery packs with 2,000+ deep discharge cycles and a 10-year design lifespan.
+
+### 3. Solar Panel Sizing and Cell Grade
+Kerala experiences prolonged monsoon seasons with heavy cloud cover. A system designed for continuous operation requires an oversized monocrystalline solar panel (typically 60W to 100W+) to harvest ample power even during overcast days.
+
+### 4. Pole Specification and Civil Installation
+Commercial projects include hot-dip galvanized (GI) octagonal or tubular poles, foundation anchor bolts, and civil concrete footing to withstand tropical wind gusts and coastal moisture.
+
+---
+
+## Component Price Impact Breakdown
+
+| Component / Factor | Cost Impact | Why It Affects Price in Kerala |
+| :--- | :--- | :--- |
+| **Battery Pack (LiFePO4)** | Very High (35–45%) | Autonomy for 2–3 continuous rainy days requires substantial Ah capacity |
+| **Monocrystalline Panel** | High (20–25%) | A-grade mono cells provide higher efficiency during cloudy monsoon weeks |
+| **LED Luminaire & Housing** | Moderate (15–20%) | Die-cast aluminium and IP67 waterproofing protect against coastal corrosion |
+| **Pole & Foundation Works** | Moderate (15–20%) | Galvanized steel poles prevent rust in humid tropical soil |
+| **Certifications & Testing** | Important (5–10%) | Compliance with IS:15885, IS:16104, and IEC:62384 standards |
+
+---
+
+## All-in-One vs Split Type: Price Comparison
+
+* **All-in-One Solar Street Lights:** Feature the panel, battery, MPPT controller, and LED array integrated into one sleek body. They require significantly less labor to mount, making them more cost-effective for estate lanes, private compounds, and residential colonies. Explore our [Solar Streetlight 600W-S1](/products/solar-streetlight-600w-s1) and [Solar Streetlight 600W-S2](/products/solar-streetlight-600w-s2).
+* **Split-Type Solar Street Lights:** Mount the solar panel separately from the light fixture. While upfront cost is higher, they allow larger solar panels and high-capacity battery enclosures for public highways and tree-shaded avenues.
+
+---
+
+## Frequently Asked Questions
+
+### Is an all-in-one solar street light cheaper than a split type?
+Usually yes, because it is quicker to install and has fewer parts. Split type can be worth the cost where there is shade.
+
+### Does a solar street light work in the monsoon?
+Yes, if it is designed for it. Look for extra battery capacity and a stated number of backup days. The 600W-S1 offers about two days of rainy-day backup.
+
+### Do I need certification for panchayat work?
+Government and local-body projects usually require tested, certified products. Ask for IS 15885, IS 16104 and IEC 62384 test documents, and check ANERT empanelment rules for the project.
+
+---
+
+Ready to plan your lighting project? Contact [FRK Lighting Solutions](/contact) for a detailed site assessment and custom quotation.`,
+    published: true,
+    created_at: "2026-11-23T09:00:00.000Z",
+    updated_at: "2026-11-23T09:00:00.000Z"
+  },
+  {
     id: "blog-1",
     slug: "sizing-solar-street-light-kerala",
     title: "How to size a solar street light for your road",
@@ -909,6 +975,7 @@ export async function saveBlog(blog: Partial<Blog>): Promise<Blog> {
     id,
     slug,
     title: blog.title || "Untitled Post",
+    meta_title: blog.meta_title,
     excerpt: blog.excerpt || "",
     content: blog.content || "",
     read_time: blog.read_time || "4 min read",

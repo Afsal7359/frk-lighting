@@ -5,8 +5,17 @@ import { Metadata } from 'next';
 import { getSiteSettings } from '@/lib/data';
 
 export const metadata: Metadata = {
-  title: 'About us',
+  title: 'About us | FRK Lighting Solutions',
   description: 'FRK Lighting Solutions supplies solar street lighting in Kerala.',
+  alternates: {
+    canonical: 'https://www.frklighting.com/about',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.frklighting.com/about',
+    title: 'About us | FRK Lighting Solutions',
+    description: 'FRK Lighting Solutions supplies solar street lighting in Kerala.',
+  },
 };
 
 export default async function AboutPage() {

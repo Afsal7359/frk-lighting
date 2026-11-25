@@ -16,6 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${pageSettings.hero_title} | FRK Lighting Solutions Kerala`,
     description: pageSettings.hero_subtitle || 'FRK Lighting provides professional solar lighting installation across all 14 districts in Kerala.',
+    alternates: {
+      canonical: 'https://www.frklighting.com/installation-services',
+    },
     openGraph: {
       title: `${pageSettings.hero_title} | FRK Lighting Solutions`,
       description: pageSettings.hero_subtitle,

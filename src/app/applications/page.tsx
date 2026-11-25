@@ -7,6 +7,15 @@ import { getApplications } from '@/lib/data';
 export const metadata: Metadata = {
   title: 'Lighting Solutions for Every Space | FRK Lighting Kerala',
   description: 'From residential communities to commercial properties and public roads, discover solar lighting solutions designed for different environments across Kerala.',
+  alternates: {
+    canonical: 'https://www.frklighting.com/applications',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.frklighting.com/applications',
+    title: 'Lighting Solutions for Every Space | FRK Lighting Kerala',
+    description: 'From residential communities to commercial properties and public roads, discover solar lighting solutions designed for different environments across Kerala.',
+  },
 };
 
 export default async function ApplicationsPage() {

@@ -7,8 +7,17 @@ import ContactForm from '@/components/ContactForm';
 import { MapPin } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact',
+  title: 'Contact | FRK Lighting Solutions',
   description: 'Contact FRK Lighting Solutions by WhatsApp, phone or email for a solar street light quote.',
+  alternates: {
+    canonical: 'https://www.frklighting.com/contact',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.frklighting.com/contact',
+    title: 'Contact | FRK Lighting Solutions',
+    description: 'Contact FRK Lighting Solutions by WhatsApp, phone or email for a solar street light quote.',
+  },
 };
 
 export default async function ContactPage() {

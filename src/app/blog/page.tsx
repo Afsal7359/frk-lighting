@@ -6,9 +6,21 @@ import { Search } from 'lucide-react';
 import { getBlogs } from '@/lib/data';
 import Pagination from '@/components/Pagination';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
-  title: 'Blog',
+  title: 'Blog | FRK Lighting Solutions',
   description: 'Practical guides on choosing, installing and maintaining solar street lights in Kerala.',
+  alternates: {
+    canonical: 'https://www.frklighting.com/blog',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.frklighting.com/blog',
+    title: 'Blog | FRK Lighting Solutions',
+    description: 'Practical guides on choosing, installing and maintaining solar street lights in Kerala.',
+  },
 };
 
 interface Props {

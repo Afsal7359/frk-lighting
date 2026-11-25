@@ -2,6 +2,7 @@ export interface Blog {
   id: string;
   slug: string;
   title: string;
+  meta_title?: string;
   excerpt: string;
   content: string;
   read_time: string;

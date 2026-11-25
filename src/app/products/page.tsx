@@ -12,6 +12,15 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: 'Solar Street Lights & Commercial Outdoor Lighting | FRK Lighting Kerala',
   description: 'Explore FRK Lighting solar street light models from 600W to 1200W with LiFePO4 batteries, IP67 waterproofing, 2-day rainy backup, and high-efficiency monocrystalline panels.',
+  alternates: {
+    canonical: 'https://www.frklighting.com/products',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.frklighting.com/products',
+    title: 'Solar Street Lights & Commercial Outdoor Lighting | FRK Lighting Kerala',
+    description: 'Explore FRK Lighting solar street light models from 600W to 1200W with LiFePO4 batteries, IP67 waterproofing, 2-day rainy backup, and high-efficiency monocrystalline panels.',
+  },
 };
 
 export default async function ProductsPage() {

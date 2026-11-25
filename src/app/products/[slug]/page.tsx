@@ -38,9 +38,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: 'Product Not Found | FRK Lighting' };
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.frklighting.com';
+  const url = `${baseUrl}/products/${product.slug}`;
+  const imgUrl = product.image_url
+    ? (product.image_url.startsWith('http') ? product.image_url : `${baseUrl}${product.image_url}`)
+    : `${baseUrl}/images/frk-logo.png`;
+
   return {
     title: `${product.name} Technical Specifications | FRK Lighting Kerala`,
     description: `${product.description} Monocrystalline solar panel, LiFePO4 battery, IP67 waterproof certification, and 2-day rainy autonomy.`,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      type: 'website',
+      url,
+      title: `${product.name} | FRK Lighting Solutions`,
+      description: product.description,
+      images: [
+        {
+          url: imgUrl,
+          alt: product.name,
+        },
+      ],
+    },
   };
 }
 

@@ -19,18 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s | FRK Lighting Solutions'
     },
     description: settings.hero_subtitle,
-    keywords: [
-      'Solar street lights Kerala',
-      'Solar flood lights Kerala',
-      'All in one solar street light',
-      'Split type solar street light',
-      'Pathway solar lights',
-      'Estate lighting Kerala',
-      'FRK Lighting Solutions'
-    ],
     metadataBase: new URL(baseUrl),
     alternates: {
-      canonical: baseUrl,
+      canonical: '/',
     },
     icons: {
       icon: [
@@ -69,22 +60,28 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const settings = await getSiteSettings();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://www.frklighting.com';
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'FRK Lighting Solutions',
     url: 'https://www.frklighting.com',
-    telephone: settings.phone,
-    email: settings.email,
+    image: `${baseUrl}/images/frk-logo.png`,
+    telephone: '+917025888461',
+    email: 'frklighting@gmail.com',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: settings.address || 'Ramanattukara, Kinfra Advanced Technology Park',
+      streetAddress: 'Kinfra Advanced Technology Park, Ramanattukara',
       addressLocality: 'Ramanattukara',
       addressRegion: 'Kerala',
+      postalCode: '673633',
       addressCountry: 'IN'
     },
-    areaServed: 'Kerala'
+    areaServed: 'Kerala',
+    sameAs: [
+      'https://www.instagram.com/frk.lighting'
+    ]
   };
 
   return (
