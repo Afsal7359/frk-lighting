@@ -87,6 +87,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${publicSans.variable} ${archivo.variable} scroll-smooth`}>
       <head>
+        {/* Google tag (gtm.js) */}
+        <script async src="https://www.googletagmanager.com/gtm.js?id=G-474LL3SGB8" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+            `,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
